@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>身份胜率分析 - 近10日趋势</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background: #16213e; padding: 20px; border-right: 1px solid #0f3460; overflow-y: auto; }
+        .sidebar h3 { color: #e94560; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .mode-btn { display: block; width: 100%; padding: 12px 16px; margin-bottom: 8px; background: #0f3460; border: none; border-radius: 8px; color: #aaa; font-size: 14px; cursor: pointer; text-align: left; transition: all 0.2s; }
+        .mode-btn:hover { background: #1a4a7a; color: #fff; }
+        .mode-btn.active { background: #e94560; color: #fff; }
+        .main { flex: 1; padding: 24px; overflow-y: auto; }
+        .header { margin-bottom: 24px; }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header p { color: #888; font-size: 14px; }
+        .identity-selector { background: #16213e; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+        .selector-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .selector-header h3 { font-size: 14px; color: #e94560; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn { background: #0f3460; border: none; color: #aaa; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+        .btn:hover { background: #1a4a7a; color: #fff; }
+        .btn.active { background: #e94560; color: #fff; }
+        .identity-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 200px; overflow-y: auto; }
+        .identity-checkbox { display: none; }
+        .identity-label { display: inline-block; padding: 6px 12px; background: #0f3460; border-radius: 20px; font-size: 13px; color: #aaa; cursor: pointer; transition: all 0.2s; user-select: none; }
+        .identity-label:hover { background: #1a4a7a; color: #fff; }
+        .identity-checkbox:checked + .identity-label { background: #e94560; color: #fff; }
+        .chart-grid { display: flex; flex-direction: column; gap: 24px; max-width: 1000px; }
+        .chart-box { background: #16213e; border-radius: 12px; padding: 20px; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .chart-header h3 { font-size: 16px; color: #fff; }
+        .chart-wrapper { position: relative; height: 300px; }
+        .trend-info { margin-top: 16px; padding: 12px; background: #0f3460; border-radius: 8px; font-size: 12px; }
+        .trend-info h4 { color: #e94560; margin-bottom: 8px; }
+        .trend-list { max-height: 120px; overflow-y: auto; }
+        .trend-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1a4a7a; }
+        .trend-item:last-child { border-bottom: none; }
+        .trend-name { color: #fff; }
+        .trend-up { color: #4ade80; }
+        .trend-down { color: #f87171; }
+        .trend-stable { color: #fbbf24; }
+        .legend-note { margin-top: 8px; font-size: 11px; color: #666; }
+        @media (max-width: 1024px) { .container { flex-direction: column; } .sidebar { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h3>🎮 模式选择</h3>
+            <button class="mode-btn active" data-mode="诸神排位">⚔️ 诸神排位</button>
+            <button class="mode-btn" data-mode="巅峰赛">🏆 巅峰赛</button>
+            <button class="mode-btn" data-mode="特别行动单人排位">💥 特别行动</button>
+            <h3 style="margin-top:20px;">⚔️ 阵营筛选</h3>
+            <button class="mode-btn camp-btn active" data-camp="all">全部</button>
+            <button class="mode-btn camp-btn" data-camp="astronaut">🚀 宇航员</button>
+            <button class="mode-btn camp-btn" data-camp="invader">👾 入侵者</button>
+            <button class="mode-btn camp-btn" data-camp="neutral">⚖️ 中立</button>
+        </div>
+        <div class="main">
+            <div class="header">
+                <h1>📊 身份胜率与参与率趋势分析</h1>
+                <p id="dateRange">日期范围：加载中...</p>
+            </div>
+            <div class="identity-selector">
+                <div class="selector-header">
+                    <h3>🎯 身份选择</h3>
+                    <div class="btn-group">
+                        <button class="btn" id="selectAll">全选</button>
+                        <button class="btn" id="clearAll">清除</button>
+                        <button class="btn" id="toggleTrend">趋势线: 关</button>
+                    </div>
+                </div>
+                <div class="identity-list" id="identityList"></div>
+            </div>
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <h3>📈 胜率趋势</h3>
+                    </div>
+                    <div class="chart-wrapper"><canvas id="winRateChart"></canvas></div>
+                    <div class="trend-info">
+                        <h4>📉 胜率趋势汇总 <span id="winSlopeInfo"></span></h4>
+                        <div class="trend-list" id="winTrendList"></div>
+                        <div class="legend-note">⬆ 上升 >0.3%/天 | ⬇ 下降 <-0.3%/天 | ➡ 平稳</div>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <h3>📊 参与率趋势</h3>
+                    </div>
+                    <div class="chart-wrapper"><canvas id="pickRateChart"></canvas></div>
+                    <div class="trend-info">
+                        <h4>📊 参与率趋势汇总 <span id="pickSlopeInfo"></span></h4>
+                        <div class="trend-list" id="pickTrendList"></div>
+                        <div class="legend-note">⬆ 上升 >0.3%/天 | ⬇ 下降 <-0.3%/天 | ➡ 平稳</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    let fullData = {};
+    let currentMode = '诸神排位';
+    let currentCamp = 'all';
+    let selectedIdentities = [];
+    let showTrend = false;
+    let winRateChart = null;
+    let pickRateChart = null;
+    
+    const campNames = { astronaut: '🚀宇航员', invader: '👾入侵者', neutral: '⚖️中立' };
+    
+    async function loadData() {
+        const resp = await fetch('./data.json');
+        fullData = await resp.json();
+        initApp();
+    }
+    
+    function getDates(mode) {
+        return Object.keys(fullData[mode] || {}).sort();
+    }
+    
+    function getIdentities(mode, camp) {
+        const dates = getDates(mode);
+        const identities = {};
+        for (const date of dates) {
+            for (const c of ['astronaut', 'invader', 'neutral']) {
+                if (camp !== 'all' && c !== camp) continue;
+                const entries = fullData[mode][date][c] || [];
+                for (const entry of entries) {
+                    const name = entry[0];
+                    if (!identities[name]) {
+                        identities[name] = { name, camp: c, winRates: [], pickRates: [], dates: [] };
+                    }
+                    identities[name].winRates.push(entry[1]);
+                    identities[name].pickRates.push(entry[2]);
+                    identities[name].dates.push(date);
+                }
+            }
+        }
+        return Object.values(identities);
+    }
+    
+    function linearRegression(yValues) {
+        const n = yValues.length;
+        if (n < 2) return { slope: 0, intercept: yValues[0] || 0 };
+        const xValues = yValues.map((_, i) => i);
+        const sumX = xValues.reduce((a, b) => a + b, 0);
+        const sumY = yValues.reduce((a, b) => a + b, 0);
+        const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
+        const sumXX = xValues.reduce((sum, x) => sum + x * x, 0);
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+        return { slope, intercept };
+    }
+    
+    function buildDatasets(selected) {
+        const colors = ['#e94560', '#4ade80', '#fbbf24', '#60a5fa', '#f472b6', '#a78bfa', '#34d399', '#fb923c', '#818cf8', '#fb7185'];
+        const dashColors = ['#ff8a9a', '#7deda0', '#fcd34d', '#93c5fd', '#f9a8d4', '#c4b5fd', '#6ee7b7', '#fdba74', '#a5b4fc', '#fda4af'];
+        
+        const datasets = [];
+        selected.forEach((id, idx) => {
+            const color = colors[idx % colors.length];
+            const dashColor = dashColors[idx % dashColors.length];
+            const reg = linearRegression(id.winRates);
+            const trendLine = id.winRates.map((_, i) => reg.slope * i + reg.intercept);
+            
+            // Main line
+            datasets.push({
+                label: id.name,
+                data: id.winRates,
+                borderColor: color,
+                backgroundColor: color + '20',
+                borderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.3,
+                _slope: reg.slope,
+                _trendData: trendLine
+            });
+            
+            // Trend line (dashed) - only if showTrend is true
+            if (showTrend) {
+                datasets.push({
+                    label: id.name + ' (趋势线)',
+                    data: trendLine,
+                    borderColor: dashColor,
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    tension: 0,
+                    _slope: reg.slope
+                });
+            }
+        });
+        return datasets;
+    }
+    
+    function buildPickDatasets(selected) {
+        const colors = ['#e94560', '#4ade80', '#fbbf24', '#60a5fa', '#f472b6', '#a78bfa', '#34d399', '#fb923c', '#818cf8', '#fb7185'];
+        const dashColors = ['#ff8a9a', '#7deda0', '#fcd34d', '#93c5fd', '#f9a8d4', '#c4b5fd', '#6ee7b7', '#fdba74', '#a5b4fc', '#fda4af'];
+        
+        const datasets = [];
+        selected.forEach((id, idx) => {
+            const color = colors[idx % colors.length];
+            const dashColor = dashColors[idx % dashColors.length];
+            const reg = linearRegression(id.pickRates);
+            const trendLine = id.pickRates.map((_, i) => reg.slope * i + reg.intercept);
+            
+            datasets.push({
+                label: id.name,
+                data: id.pickRates,
+                borderColor: color,
+                backgroundColor: color + '20',
+                borderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.3,
+                _slope: reg.slope,
+                _trendData: trendLine
+            });
+            
+            if (showTrend) {
+                datasets.push({
+                    label: id.name + ' (趋势线)',
+                    data: trendLine,
+                    borderColor: dashColor,
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    tension: 0,
+                    _slope: reg.slope
+                });
+            }
+        });
+        return datasets;
+    }
+    
+    function renderCharts() {
+        const dates = getDates(currentMode);
+        const identities = getIdentities(currentMode, currentCamp);
+        const selected = identities.filter(i => selectedIdentities.includes(i.name));
+        
+        if (winRateChart) winRateChart.destroy();
+        if (pickRateChart) pickRateChart.destroy();
+        
+        const winCtx = document.getElementById('winRateChart').getContext('2d');
+        winRateChart = new Chart(winCtx, {
+            type: 'line',
+            data: { labels: dates, datasets: buildDatasets(selected) },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { color: '#aaa', boxWidth: 12, padding: 8, font: { size: 11 } } 
+                    },
+                    tooltip: {
+                        backgroundColor: '#16213e', 
+                        titleColor: '#fff', 
+                        bodyColor: '#aaa',
+                        borderColor: '#0f3460', 
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: { grid: { color: '#0f3460' }, ticks: { color: '#888' } },
+                    y: { grid: { color: '#0f3460' }, ticks: { color: '#888', callback: v => v + '%' } }
+                }
+            }
+        });
+        
+        const pickCtx = document.getElementById('pickRateChart').getContext('2d');
+        pickRateChart = new Chart(pickCtx, {
+            type: 'line',
+            data: { labels: dates, datasets: buildPickDatasets(selected) },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { color: '#aaa', boxWidth: 12, padding: 8, font: { size: 11 } } 
+                    },
+                    tooltip: {
+                        backgroundColor: '#16213e', 
+                        titleColor: '#fff', 
+                        bodyColor: '#aaa',
+                        borderColor: '#0f3460', 
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: { grid: { color: '#0f3460' }, ticks: { color: '#888' } },
+                    y: { grid: { color: '#0f3460' }, ticks: { color: '#888', callback: v => v + '%' } }
+                }
+            }
+        });
+        
+        // Update trend lists
+        let winTrendHTML = '';
+        let upCount = 0, downCount = 0, stableCount = 0;
+        selected.forEach(id => {
+            const reg = linearRegression(id.winRates);
+            const slope = reg.slope;
+            if (slope > 0.3) upCount++;
+            else if (slope < -0.3) downCount++;
+            else stableCount++;
+        });
+        document.getElementById('winSlopeInfo').textContent = `(↑${upCount} ↓${downCount} →${stableCount})`;
+        
+        selected.forEach(id => {
+            const reg = linearRegression(id.winRates);
+            const slope = reg.slope;
+            const cls = slope > 0.3 ? 'trend-up' : slope < -0.3 ? 'trend-down' : 'trend-stable';
+            const icon = slope > 0.3 ? '⬆' : slope < -0.3 ? '⬇' : '➡';
+            winTrendHTML += `<div class="trend-item"><span class="trend-name">${id.name}</span><span class="${cls}">${icon} ${slope > 0 ? '+' : ''}${slope.toFixed(2)}%/天</span></div>`;
+        });
+        document.getElementById('winTrendList').innerHTML = winTrendHTML || '<div style="color:#666">请先选择身份</div>';
+        
+        let pickTrendHTML = '';
+        upCount = 0; downCount = 0; stableCount = 0;
+        selected.forEach(id => {
+            const reg = linearRegression(id.pickRates);
+            const slope = reg.slope;
+            if (slope > 0.3) upCount++;
+            else if (slope < -0.3) downCount++;
+            else stableCount++;
+        });
+        document.getElementById('pickSlopeInfo').textContent = `(↑${upCount} ↓${downCount} →${stableCount})`;
+        
+        selected.forEach(id => {
+            const reg = linearRegression(id.pickRates);
+            const slope = reg.slope;
+            const cls = slope > 0.3 ? 'trend-up' : slope < -0.3 ? 'trend-down' : 'trend-stable';
+            const icon = slope > 0.3 ? '⬆' : slope < -0.3 ? '⬇' : '➡';
+            pickTrendHTML += `<div class="trend-item"><span class="trend-name">${id.name}</span><span class="${cls}">${icon} ${slope > 0 ? '+' : ''}${slope.toFixed(2)}%/天</span></div>`;
+        });
+        document.getElementById('pickTrendList').innerHTML = pickTrendHTML || '<div style="color:#666">请先选择身份</div>';
+    }
+    
+    function renderIdentityList() {
+        const identities = getIdentities(currentMode, currentCamp);
+        const listEl = document.getElementById('identityList');
+        listEl.innerHTML = '';
+        
+        const byCamp = { astronaut: [], invader: [], neutral: [] };
+        identities.forEach(id => byCamp[id.camp].push(id));
+        
+        const campOrder = currentCamp === 'all' ? ['astronaut', 'invader', 'neutral'] : [currentCamp];
+        
+        campOrder.forEach(camp => {
+            byCamp[camp].forEach(id => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex;align-items:center;margin-bottom:4px;';
+                
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'identity-checkbox';
+                cb.id = 'id_' + id.name;
+                cb.value = id.name;
+                if (selectedIdentities.includes(id.name)) cb.checked = true;
+                
+                const label = document.createElement('label');
+                label.className = 'identity-label';
+                label.htmlFor = 'id_' + id.name;
+                label.textContent = campNames[camp].replace(/\S+/, '') + ' ' + id.name;
+                
+                cb.addEventListener('change', () => {
+                    if (cb.checked) {
+                        if (!selectedIdentities.includes(id.name)) selectedIdentities.push(id.name);
+                    } else {
+                        selectedIdentities = selectedIdentities.filter(n => n !== id.name);
+                    }
+                    renderCharts();
+                });
+                
+                div.appendChild(cb);
+                div.appendChild(label);
+                listEl.appendChild(div);
+            });
+        });
+    }
+    
+    function initApp() {
+        const dates = getDates(currentMode);
+        document.getElementById('dateRange').textContent = `日期范围：${dates[0]} 至 ${dates[dates.length-1]}（共${dates.length}天）`;
+        
+        document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                selectedIdentities = [];
+                const newDates = getDates(currentMode);
+                document.getElementById('dateRange').textContent = `日期范围：${newDates[0]} 至 ${newDates[newDates.length-1]}（共${newDates.length}天）`;
+                renderIdentityList();
+                renderCharts();
+            });
+        });
+        
+        document.querySelectorAll('.mode-btn[data-camp]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn[data-camp]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCamp = btn.dataset.camp;
+                selectedIdentities = [];
+                renderIdentityList();
+                renderCharts();
+            });
+        });
+        
+        document.getElementById('selectAll').addEventListener('click', () => {
+            const cbs = document.querySelectorAll('.identity-checkbox');
+            cbs.forEach(cb => { cb.checked = true; if (!selectedIdentities.includes(cb.value)) selectedIdentities.push(cb.value); });
+            renderCharts();
+        });
+        
+        document.getElementById('clearAll').addEventListener('click', () => {
+            selectedIdentities = [];
+            document.querySelectorAll('.identity-checkbox').forEach(cb => cb.checked = false);
+            renderCharts();
+        });
+        
+        document.getElementById('toggleTrend').addEventListener('click', () => {
+            showTrend = !showTrend;
+            const btn = document.getElementById('toggleTrend');
+            btn.textContent = '趋势线: ' + (showTrend ? '开' : '关');
+            btn.classList.toggle('active', showTrend);
+            renderCharts();
+        });
+        
+        renderIdentityList();
+        renderCharts();
+    }
+    
+    loadData();
+    </script>
+</body>
+</html>
