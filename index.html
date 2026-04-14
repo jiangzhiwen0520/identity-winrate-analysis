@@ -138,7 +138,18 @@
     }
     
     function getDates(mode) {
-        return Object.keys(fullData[mode] || {}).sort().slice(-7);
+        const allDates = Object.keys(fullData[mode] || {}).sort();
+        if (allDates.length === 0) return [];
+        const latest = allDates[allDates.length - 1];
+        const latestDate = new Date(latest);
+        const result = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(latestDate);
+            d.setDate(d.getDate() - i);
+            const str = d.toISOString().split('T')[0];
+            result.push(str);
+        }
+        return result;
     }
     
     function getIdentities(mode, camp) {
