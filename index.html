@@ -1757,8 +1757,11 @@ function updateLineChart(mode) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: { mode: 'nearest', intersect: false },
-            plugins: { legend: { labels: { color: '#e8eaf0', boxWidth: 12 } } },
+            interaction: { mode: 'index', intersect: true },
+            plugins: { 
+                legend: { labels: { color: '#e8eaf0', boxWidth: 12 } },
+                tooltip: { mode: 'index', intersect: true, itemSort: (a, b) => b.datasetIndex - a.datasetIndex }
+            },
             scales: {
                 x: { ticks: { color: '#7a8aad' }, grid: { color: '#2a3a5a' } },
                 y: { ticks: { color: '#7a8aad', callback: v => v + '%' }, grid: { color: '#2a3a5a' } }
