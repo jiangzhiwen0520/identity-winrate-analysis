@@ -1,469 +1,1837 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>身份胜率分析 - 近7日趋势</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
-        .container { display: flex; min-height: 100vh; }
-        .sidebar { width: 260px; background: #16213e; padding: 20px; border-right: 1px solid #0f3460; overflow-y: auto; }
-        .sidebar h3 { color: #e94560; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
-        .mode-btn { display: block; width: 100%; padding: 12px 16px; margin-bottom: 8px; background: #0f3460; border: none; border-radius: 8px; color: #aaa; font-size: 14px; cursor: pointer; text-align: left; transition: all 0.2s; }
-        .mode-btn:hover { background: #1a4a7a; color: #fff; }
-        .mode-btn.active { background: #e94560; color: #fff; }
-        .main { flex: 1; padding: 24px; overflow-y: auto; width: 100%; min-width: 0; box-sizing: border-box; }
-        .header { margin-bottom: 24px; }
-        .header h1 { font-size: 24px; margin-bottom: 8px; }
-        .header p { color: #888; font-size: 14px; }
-        .identity-selector { background: #16213e; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
-        .selector-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-        .selector-header h3 { font-size: 14px; color: #e94560; }
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn { background: #0f3460; border: none; color: #aaa; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
-        .btn:hover { background: #1a4a7a; color: #fff; }
-        .btn.active { background: #e94560; color: #fff; }
-        .identity-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 200px; overflow-y: auto; }
-        .identity-checkbox { display: none; }
-        .identity-label { display: inline-block; padding: 6px 12px; background: #0f3460; border-radius: 20px; font-size: 13px; color: #aaa; cursor: pointer; transition: all 0.2s; user-select: none; }
-        .identity-label:hover { background: #1a4a7a; color: #fff; }
-        .identity-checkbox:checked + .identity-label { background: #e94560; color: #fff; }
-        .chart-grid { display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0; }
-        .chart-box { background: #16213e; border-radius: 12px; padding: 20px; width: 100%; box-sizing: border-box; overflow: hidden; }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .chart-header h3 { font-size: 16px; color: #fff; }
-        .chart-wrapper { position: relative; height: 300px; width: 100%; }
-        .trend-info { margin-top: 16px; padding: 12px; background: #0f3460; border-radius: 8px; font-size: 12px; }
-        .trend-info h4 { color: #e94560; margin-bottom: 8px; }
-        .trend-list { max-height: 120px; overflow-y: auto; }
-        .trend-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1a4a7a; }
-        .trend-item:last-child { border-bottom: none; }
-        .trend-name { color: #fff; }
-        .trend-up { color: #4ade80; }
-        .trend-down { color: #f87171; }
-        .trend-stable { color: #fbbf24; }
-        .legend-note { margin-top: 8px; font-size: 11px; color: #666; }
-        @media (max-width: 1024px) {
-            .container { flex-direction: column; }
-            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #0f3460; padding: 12px 16px; }
-            .main { padding: 16px; }
-            .chart-wrapper { height: 250px; }
-            .chart-box { padding: 16px; }
-            .header h1 { font-size: 20px; }
+<html><head><meta charset="UTF-8"><title>Identity 胜率分析</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1420; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+.header { text-align: center; padding: 20px 0; margin-bottom: 20px; }
+.header h1 { color: #4ade80; font-size: 28px; margin-bottom: 8px; }
+.header .dates { color: #888; font-size: 14px; }
+.mode-section { background: #151b2e; border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+.mode-title { font-size: 20px; font-weight: 700; color: #60a5fa; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+.mode-badge { background: #1e3a5f; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #93c5fd; }
+.ai-summary { background: #1a2234; border-left: 3px solid #4ade80; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 8px 8px 0; color: #d1d5db; line-height: 1.6; font-size: 14px; }
+.chart-card { background: #1a2234; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.chart-title { color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.chart-container { position: relative; height: 280px; }
+.controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.controls label { font-size: 12px; color: #888; }
+.controls select, .controls input { background: #1e293b; border: 1px solid #2d3748; border-radius: 6px; padding: 6px 10px; color: #fff; font-size: 13px; }
+.controls button { background: #1e3a5f; border: none; border-radius: 6px; padding: 6px 12px; color: #93c5fd; font-size: 12px; cursor: pointer; }
+.controls button:hover { background: #2d4a6f; }
+.controls button.active { background: #3b82f6; color: #fff; }
+.legend-inline { display: flex; gap: 12px; font-size: 11px; color: #888; margin-top: 8px; }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.table-section { margin-top: 20px; }
+.table-title { font-size: 14px; color: #94a3b8; margin-bottom: 12px; }
+.tier-table { width: 100%; border-collapse: collapse; }
+.tier-table th { background: #1e293b; padding: 8px 12px; text-align: left; font-size: 11px; color: #94a3b8; text-transform: uppercase; }
+.tier-table td { padding: 8px 12px; border-bottom: 1px solid #1e293b; font-size: 13px; }
+.tier-table tr:hover { background: #1e293b; cursor: pointer; }
+.tier-badge { display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.positive { color: #4ade80; }
+.negative { color: #f87171; }
+.change-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px; }
+.change-tag { padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+.change-tag.up { background: rgba(74,222,128,0.15); color: #4ade80; }
+.change-tag.down { background: rgba(248,113,113,0.15); color: #f87171; }
+.role-detail { display: none; background: #1a2234; border-radius: 12px; padding: 16px; margin-top: 12px; }
+.role-detail.active { display: block; }
+.detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.detail-name { font-size: 18px; font-weight: 700; }
+.detail-faction { font-size: 12px; color: #888; background: #2d3748; padding: 2px 8px; border-radius: 4px; }
+.detail-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+.metric { background: #151b2e; padding: 12px; border-radius: 8px; text-align: center; }
+.metric-value { font-size: 20px; font-weight: 700; }
+.metric-label { font-size: 11px; color: #888; margin-top: 4px; }
+.detail-analysis { background: #0f1420; padding: 12px; border-radius: 8px; font-size: 13px; color: #d1d5db; line-height: 1.6; border-left: 3px solid #60a5fa; }
+</style></head><body>
+<div class="header">
+<h1>🎮 Identity 胜率分析</h1>
+<div class="dates" id="dates"></div>
+</div><div class="mode-section" id="section-诸神排位">
+<div class="mode-title">Gods Ranking <span class="mode-badge">2026-04-22</span></div>
+<div class="ai-summary">T1顶尖：船员(45.1%)、蛇精(60.6%)、教父(52.4%)；弱势关注：怪兽(15.5%)、考古学家(48.1%)、神子(31.7%)；最大异动：幻影↑11.6%</div>
+
+<div class="chart-card">
+<div class="chart-title">📈 胜率趋势（折线图）</div>
+<div class="controls">
+<div style="display:flex;gap:4px;align-items:center;">
+<label>角色：</label>
+<select id="multi-诸神排位" multiple size="3" style="width:150px;">
+<option value="柯南" selected>柯南</option><option value="武士" selected>武士</option><option value="时间之主" selected>时间之主</option><option value="毛利兰" selected>毛利兰</option><option value="葫芦兄弟" selected>葫芦兄弟</option><option value="诱饵" >诱饵</option><option value="逍遥" >逍遥</option><option value="国王" >国王</option><option value="勇者" >勇者</option><option value="卧底" >卧底</option><option value="法官" >法官</option><option value="换票师" >换票师</option><option value="哪吒" >哪吒</option><option value="警长" >警长</option><option value="考古学家" >考古学家</option><option value="单面人" >单面人</option><option value="灰原哀" >灰原哀</option><option value="光之巨人" >光之巨人</option><option value="狱卒" >狱卒</option><option value="守望者" >守望者</option><option value="船员" >船员</option><option value="老兵" >老兵</option><option value="医生" >医生</option><option value="情报员" >情报员</option><option value="侦探" >侦探</option><option value="魔术师" >魔术师</option><option value="守卫" >守卫</option><option value="猎人" >猎人</option><option value="预言家" >预言家</option><option value="管道工" >管道工</option>
+</select>
+</div>
+<button onclick="updateLineChart('诸神排位')" class="active">更新图表</button>
+</div>
+<div class="chart-container"><canvas id="line-诸神排位"></canvas></div>
+</div>
+
+<div class="chart-card">
+<div class="chart-title">📊 角色对比（柱状图 - Top 2026-04-22）</div>
+<div class="controls">
+<select id="bar-mode-诸神排位" onchange="updateBarChart('诸神排位')">
+<option value="诸神排位" selected>Gods Ranking</option><option value="特别行动单人排位" >Special Ops Solo</option><option value="巅峰赛" >Peak Tournament</option>
+</select>
+<select id="bar-date-诸神排位" onchange="updateBarChart('诸神排位')">
+<option value="2026-04-16">2026-04-16</option><option value="2026-04-17">2026-04-17</option><option value="2026-04-18">2026-04-18</option><option value="2026-04-19">2026-04-19</option><option value="2026-04-20">2026-04-20</option><option value="2026-04-21">2026-04-21</option><option value="2026-04-22">2026-04-22</option>
+</select>
+</div>
+<div class="chart-container"><canvas id="bar-诸神排位"></canvas></div>
+</div>
+
+<div class="table-section">
+<div class="table-title">📋 T1-T4 分级表（2026-04-22）</div>
+<div class="change-tags">
+<span class="change-tag up">幻影 +11.6%</span><span class="change-tag down">灰原哀 -10.4%</span><span class="change-tag up">饕餮 +8.3%</span><span class="change-tag up">守夜人 +7.6%</span><span class="change-tag down">魔术师 -6.6%</span><span class="change-tag up">奶龙 +5.1%</span><span class="change-tag down">搬运工 -5%</span><span class="change-tag down">焰火师 -5%</span>
+</div>
+<table class="tier-table">
+<thead><tr><th>角色</th><th>阵营</th><th>胜率</th><th>登场率</th><th>综合分</th><th>等级</th></tr></thead>
+<tbody>
+<tr onclick="showDetail('诸神排位', '2026-04-22', '船员')">
+<td><b>船员</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">45.1%</td>
+<td>199.9%</td>
+<td>2.11</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '蛇精')">
+<td><b>蛇精</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">60.6%</td>
+<td>0.1%</td>
+<td>1.44</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '教父')">
+<td><b>教父</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">52.4%</td>
+<td>4.6%</td>
+<td>1.17</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '幸存者')">
+<td><b>幸存者</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">72.4%</td>
+<td>5.5%</td>
+<td>0.96</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '女帝')">
+<td><b>女帝</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">50.9%</td>
+<td>1.4%</td>
+<td>0.86</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '柯南')">
+<td><b>柯南</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">56.9%</td>
+<td>5.4%</td>
+<td>0.85</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '收割者')">
+<td><b>收割者</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">50.8%</td>
+<td>0.7%</td>
+<td>0.82</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '警长')">
+<td><b>警长</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.1%</td>
+<td>33.3%</td>
+<td>0.81</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '熊大熊二')">
+<td><b>熊大熊二</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">50.2%</td>
+<td>0.7%</td>
+<td>0.77</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '赏金猎人')">
+<td><b>赏金猎人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">48.2%</td>
+<td>3%</td>
+<td>0.77</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '变色龙')">
+<td><b>变色龙</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">41.8%</td>
+<td>36.2%</td>
+<td>0.73</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '葫芦兄弟')">
+<td><b>葫芦兄弟</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.8%</td>
+<td>8.4%</td>
+<td>0.71</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '双面人')">
+<td><b>双面人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.1%</td>
+<td>13.3%</td>
+<td>0.70</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '摄魂怪')">
+<td><b>摄魂怪</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">46.1%</td>
+<td>5.2%</td>
+<td>0.68</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '墙头草')">
+<td><b>墙头草</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">63.6%</td>
+<td>1.3%</td>
+<td>0.65</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '忍者')">
+<td><b>忍者</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">47.6%</td>
+<td>2.1%</td>
+<td>0.64</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '小蜜蜂')">
+<td><b>小蜜蜂</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="">46.5%</td>
+<td>7%</td>
+<td>0.64</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '鬼新娘')">
+<td><b>鬼新娘</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">48.1%</td>
+<td>1.2%</td>
+<td>0.63</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '时间刺客')">
+<td><b>时间刺客</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">46.5%</td>
+<td>2.6%</td>
+<td>0.60</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '丘比特')">
+<td><b>丘比特</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">51.4%</td>
+<td>2.3%</td>
+<td>0.55</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '狙击手')">
+<td><b>狙击手</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">41.9%</td>
+<td>24.4%</td>
+<td>0.53</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '小黑')">
+<td><b>小黑</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">47.3%</td>
+<td>0.3%</td>
+<td>0.52</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '时间之主')">
+<td><b>时间之主</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.1%</td>
+<td>2.4%</td>
+<td>0.51</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '武士')">
+<td><b>武士</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.2%</td>
+<td>2.1%</td>
+<td>0.50</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '毛利兰')">
+<td><b>毛利兰</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.9%</td>
+<td>0.7%</td>
+<td>0.43</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '吸血鬼')">
+<td><b>吸血鬼</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">45.6%</td>
+<td>1.6%</td>
+<td>0.42</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '诱饵')">
+<td><b>诱饵</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.1%</td>
+<td>1.7%</td>
+<td>0.42</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '国王')">
+<td><b>国王</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.9%</td>
+<td>1.5%</td>
+<td>0.40</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '单面人')">
+<td><b>单面人</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48%</td>
+<td>9.2%</td>
+<td>0.38</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '逍遥')">
+<td><b>逍遥</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52%</td>
+<td>0.6%</td>
+<td>0.37</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '伪人')">
+<td><b>伪人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.4%</td>
+<td>2.4%</td>
+<td>0.37</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '勇者')">
+<td><b>勇者</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.1%</td>
+<td>1.5%</td>
+<td>0.34</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '卧底')">
+<td><b>卧底</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.8%</td>
+<td>0.9%</td>
+<td>0.30</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '清洁工')">
+<td><b>清洁工</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.6%</td>
+<td>6.8%</td>
+<td>0.30</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '法官')">
+<td><b>法官</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.4%</td>
+<td>1.3%</td>
+<td>0.29</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '暗之巨人')">
+<td><b>暗之巨人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.3%</td>
+<td>1.1%</td>
+<td>0.25</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '哪吒')">
+<td><b>哪吒</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.3%</td>
+<td>3.4%</td>
+<td>0.25</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '换票师')">
+<td><b>换票师</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">49%</td>
+<td>2.2%</td>
+<td>0.23</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '欺诈师')">
+<td><b>欺诈师</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">43.4%</td>
+<td>1.5%</td>
+<td>0.16</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '守望者')">
+<td><b>守望者</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">46.3%</td>
+<td>8.3%</td>
+<td>0.11</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '怪兽')">
+<td><b>怪兽</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">15.5%</td>
+<td>16.2%</td>
+<td>0.09</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '考古学家')">
+<td><b>考古学家</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.1%</td>
+<td>0.7%</td>
+<td>0.09</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '神子')">
+<td><b>神子</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">31.7%</td>
+<td>0.4%</td>
+<td>0.08</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '怪盗')">
+<td><b>怪盗</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">28.2%</td>
+<td>1.1%</td>
+<td>0.01</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '光之巨人')">
+<td><b>光之巨人</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">47%</td>
+<td>1.9%</td>
+<td>0.01</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '守夜人')">
+<td><b>守夜人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.4%</td>
+<td>1.7%</td>
+<td>-0.00</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '灰原哀')">
+<td><b>灰原哀</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">47.3%</td>
+<td>0.5%</td>
+<td>-0.00</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '大胃王')">
+<td><b>大胃王</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">17.8%</td>
+<td>9.3%</td>
+<td>-0.01</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '捣蛋鬼')">
+<td><b>捣蛋鬼</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.6%</td>
+<td>0.5%</td>
+<td>-0.02</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '女巫')">
+<td><b>女巫</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">41.6%</td>
+<td>4.2%</td>
+<td>-0.04</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '奶龙')">
+<td><b>奶龙</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">26.8%</td>
+<td>0.6%</td>
+<td>-0.08</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '恶魔')">
+<td><b>恶魔</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">25.7%</td>
+<td>1.5%</td>
+<td>-0.10</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '狱卒')">
+<td><b>狱卒</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">46.6%</td>
+<td>1.1%</td>
+<td>-0.12</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '医生')">
+<td><b>医生</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.1%</td>
+<td>8.9%</td>
+<td>-0.15</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '老兵')">
+<td><b>老兵</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.3%</td>
+<td>7.9%</td>
+<td>-0.16</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '小丑')">
+<td><b>小丑</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">16.3%</td>
+<td>4.7%</td>
+<td>-0.17</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '无面人')">
+<td><b>无面人</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">19.1%</td>
+<td>2.5%</td>
+<td>-0.20</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '焰火师')">
+<td><b>焰火师</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">14.8%</td>
+<td>4.3%</td>
+<td>-0.21</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '预言家')">
+<td><b>预言家</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.4%</td>
+<td>13.1%</td>
+<td>-0.23</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '孙悟空')">
+<td><b>孙悟空</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.8%</td>
+<td>2.5%</td>
+<td>-0.24</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '饕餮')">
+<td><b>饕餮</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">19.5%</td>
+<td>1.6%</td>
+<td>-0.26</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '幻影')">
+<td><b>幻影</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">15.9%</td>
+<td>2.3%</td>
+<td>-0.28</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '咒术师')">
+<td><b>咒术师</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">39.5%</td>
+<td>4.7%</td>
+<td>-0.28</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '间谍')">
+<td><b>间谍</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">39.7%</td>
+<td>3.8%</td>
+<td>-0.30</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '情报员')">
+<td><b>情报员</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.7%</td>
+<td>3.7%</td>
+<td>-0.32</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '收债人')">
+<td><b>收债人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.9%</td>
+<td>1%</td>
+<td>-0.34</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '闪光弹')">
+<td><b>闪光弹</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.6%</td>
+<td>1.5%</td>
+<td>-0.35</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '管道工')">
+<td><b>管道工</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.3%</td>
+<td>5.9%</td>
+<td>-0.40</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '内鬼')">
+<td><b>内鬼</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">38.1%</td>
+<td>5.2%</td>
+<td>-0.40</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '守卫')">
+<td><b>守卫</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.4%</td>
+<td>3%</td>
+<td>-0.44</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '侦探')">
+<td><b>侦探</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.7%</td>
+<td>2.5%</td>
+<td>-0.45</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '猎人')">
+<td><b>猎人</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.5%</td>
+<td>3.7%</td>
+<td>-0.46</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '黑客')">
+<td><b>黑客</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.2%</td>
+<td>6%</td>
+<td>-0.51</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '魔术师')">
+<td><b>魔术师</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.5%</td>
+<td>1.5%</td>
+<td>-0.52</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '保安')">
+<td><b>保安</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.3%</td>
+<td>2.5%</td>
+<td>-0.54</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '工程师')">
+<td><b>工程师</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">37.3%</td>
+<td>6.1%</td>
+<td>-0.56</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '市长')">
+<td><b>市长</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">37.3%</td>
+<td>1.8%</td>
+<td>-0.74</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '搬运工')">
+<td><b>搬运工</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">36.6%</td>
+<td>1.1%</td>
+<td>-0.77</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="role-detail" id="detail-诸神排位"></div>
+</div><div class="mode-section" id="section-特别行动单人排位">
+<div class="mode-title">Special Ops Solo <span class="mode-badge">2026-04-22</span></div>
+<div class="ai-summary">T1顶尖：幸存者(70.3%)、双面人(35.5%)、教父(37.6%)；弱势关注：忍者(30%)、武士(53.6%)、捣蛋鬼(29.2%)；最大异动：奶龙↓24.1%</div>
+
+<div class="chart-card">
+<div class="chart-title">📈 胜率趋势（折线图）</div>
+<div class="controls">
+<div style="display:flex;gap:4px;align-items:center;">
+<label>角色：</label>
+<select id="multi-特别行动单人排位" multiple size="3" style="width:150px;">
+<option value="卧底" selected>卧底</option><option value="毛利兰" selected>毛利兰</option><option value="时间之主" selected>时间之主</option><option value="逍遥" selected>逍遥</option><option value="柯南" selected>柯南</option><option value="葫芦兄弟" >葫芦兄弟</option><option value="灰原哀" >灰原哀</option><option value="法官" >法官</option><option value="武士" >武士</option><option value="守卫" >守卫</option><option value="光之巨人" >光之巨人</option><option value="考古学家" >考古学家</option><option value="警长" >警长</option><option value="市长" >市长</option><option value="老兵" >老兵</option><option value="勇者" >勇者</option><option value="医生" >医生</option><option value="守望者" >守望者</option><option value="国王" >国王</option><option value="单面人" >单面人</option><option value="狱卒" >狱卒</option><option value="诱饵" >诱饵</option><option value="保安" >保安</option><option value="管道工" >管道工</option><option value="换票师" >换票师</option><option value="黑客" >黑客</option><option value="预言家" >预言家</option><option value="工程师" >工程师</option><option value="猎人" >猎人</option><option value="哪吒" >哪吒</option>
+</select>
+</div>
+<button onclick="updateLineChart('特别行动单人排位')" class="active">更新图表</button>
+</div>
+<div class="chart-container"><canvas id="line-特别行动单人排位"></canvas></div>
+</div>
+
+<div class="chart-card">
+<div class="chart-title">📊 角色对比（柱状图 - Top 2026-04-22）</div>
+<div class="controls">
+<select id="bar-mode-特别行动单人排位" onchange="updateBarChart('特别行动单人排位')">
+<option value="诸神排位" >Gods Ranking</option><option value="特别行动单人排位" selected>Special Ops Solo</option><option value="巅峰赛" >Peak Tournament</option>
+</select>
+<select id="bar-date-特别行动单人排位" onchange="updateBarChart('特别行动单人排位')">
+<option value="2026-04-15">2026-04-15</option><option value="2026-04-16">2026-04-16</option><option value="2026-04-17">2026-04-17</option><option value="2026-04-18">2026-04-18</option><option value="2026-04-19">2026-04-19</option><option value="2026-04-20">2026-04-20</option><option value="2026-04-22">2026-04-22</option>
+</select>
+</div>
+<div class="chart-container"><canvas id="bar-特别行动单人排位"></canvas></div>
+</div>
+
+<div class="table-section">
+<div class="table-title">📋 T1-T4 分级表（2026-04-22）</div>
+<div class="change-tags">
+<span class="change-tag down">奶龙 -24.1%</span><span class="change-tag down">蛇精 -20.5%</span><span class="change-tag down">伪人 -17.9%</span><span class="change-tag up">市长 +17.8%</span><span class="change-tag down">内鬼 -14%</span><span class="change-tag up">幻影 +14%</span><span class="change-tag down">丘比特 -13.6%</span><span class="change-tag down">清洁工 -12.8%</span>
+</div>
+<table class="tier-table">
+<thead><tr><th>角色</th><th>阵营</th><th>胜率</th><th>登场率</th><th>综合分</th><th>等级</th></tr></thead>
+<tbody>
+<tr onclick="showDetail('特别行动单人排位', '2026-04-22', '幸存者')">
+<td><b>幸存者</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">70.3%</td>
+<td>39.3%</td>
+<td>1.39</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '双面人')">
+<td><b>双面人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">35.5%</td>
+<td>35.8%</td>
+<td>1.28</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '教父')">
+<td><b>教父</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">37.6%</td>
+<td>14.6%</td>
+<td>1.06</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '摄魂怪')">
+<td><b>摄魂怪</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">36.1%</td>
+<td>17.1%</td>
+<td>1.01</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '小蜜蜂')">
+<td><b>小蜜蜂</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="">46.7%</td>
+<td>26.7%</td>
+<td>0.89</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '鬼新娘')">
+<td><b>鬼新娘</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">38.1%</td>
+<td>5.1%</td>
+<td>0.82</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '赏金猎人')">
+<td><b>赏金猎人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">33.4%</td>
+<td>15.3%</td>
+<td>0.80</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '葫芦兄弟')">
+<td><b>葫芦兄弟</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">55%</td>
+<td>54.4%</td>
+<td>0.79</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '墙头草')">
+<td><b>墙头草</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">53.3%</td>
+<td>13.2%</td>
+<td>0.74</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '收割者')">
+<td><b>收割者</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">35.5%</td>
+<td>6.5%</td>
+<td>0.72</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '柯南')">
+<td><b>柯南</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">55.2%</td>
+<td>37.7%</td>
+<td>0.70</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '丘比特')">
+<td><b>丘比特</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="">43.4%</td>
+<td>17.1%</td>
+<td>0.67</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '女帝')">
+<td><b>女帝</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">35.3%</td>
+<td>5.4%</td>
+<td>0.66</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '时间之主')">
+<td><b>时间之主</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">55.9%</td>
+<td>19.5%</td>
+<td>0.64</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '毛利兰')">
+<td><b>毛利兰</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">57.1%</td>
+<td>9.6%</td>
+<td>0.63</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '吸血鬼')">
+<td><b>吸血鬼</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">32.4%</td>
+<td>10.4%</td>
+<td>0.61</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '卧底')">
+<td><b>卧底</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">57.1%</td>
+<td>4.9%</td>
+<td>0.55</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '时间刺客')">
+<td><b>时间刺客</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">32.8%</td>
+<td>5.9%</td>
+<td>0.51</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '熊大熊二')">
+<td><b>熊大熊二</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">34.4%</td>
+<td>3.9%</td>
+<td>0.51</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '怪盗')">
+<td><b>怪盗</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">30.2%</td>
+<td>21.2%</td>
+<td>0.50</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '逍遥')">
+<td><b>逍遥</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">55.5%</td>
+<td>8.5%</td>
+<td>0.37</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '欺诈师')">
+<td><b>欺诈师</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">31.3%</td>
+<td>5.5%</td>
+<td>0.37</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '警长')">
+<td><b>警长</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53%</td>
+<td>72.5%</td>
+<td>0.36</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '暗之巨人')">
+<td><b>暗之巨人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">31%</td>
+<td>4.1%</td>
+<td>0.25</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '狙击手')">
+<td><b>狙击手</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">29.2%</td>
+<td>7.7%</td>
+<td>0.23</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '间谍')">
+<td><b>间谍</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30%</td>
+<td>5.1%</td>
+<td>0.22</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '幻影')">
+<td><b>幻影</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">23.2%</td>
+<td>15.3%</td>
+<td>0.20</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '光之巨人')">
+<td><b>光之巨人</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.3%</td>
+<td>34.9%</td>
+<td>0.15</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '法官')">
+<td><b>法官</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.8%</td>
+<td>14.8%</td>
+<td>0.15</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '蛇精')">
+<td><b>蛇精</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30.9%</td>
+<td>0.9%</td>
+<td>0.14</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '搬运工')">
+<td><b>搬运工</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30.4%</td>
+<td>2.1%</td>
+<td>0.12</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '忍者')">
+<td><b>忍者</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30%</td>
+<td>2.6%</td>
+<td>0.10</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '武士')">
+<td><b>武士</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.6%</td>
+<td>19.3%</td>
+<td>0.09</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '捣蛋鬼')">
+<td><b>捣蛋鬼</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">29.2%</td>
+<td>3.3%</td>
+<td>0.02</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '伪人')">
+<td><b>伪人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">29%</td>
+<td>3.7%</td>
+<td>0.01</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '灰原哀')">
+<td><b>灰原哀</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.8%</td>
+<td>8.1%</td>
+<td>-0.00</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '单面人')">
+<td><b>单面人</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.8%</td>
+<td>51.1%</td>
+<td>-0.01</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '神子')">
+<td><b>神子</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">26.1%</td>
+<td>4.7%</td>
+<td>-0.02</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '老兵')">
+<td><b>老兵</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.8%</td>
+<td>26.9%</td>
+<td>-0.03</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '女巫')">
+<td><b>女巫</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">27.8%</td>
+<td>7.5%</td>
+<td>-0.04</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '变色龙')">
+<td><b>变色龙</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">27.9%</td>
+<td>7.1%</td>
+<td>-0.04</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '清洁工')">
+<td><b>清洁工</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">27.4%</td>
+<td>8.5%</td>
+<td>-0.05</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '恶魔')">
+<td><b>恶魔</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">24.3%</td>
+<td>5.1%</td>
+<td>-0.07</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '大胃王')">
+<td><b>大胃王</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">13.7%</td>
+<td>13.9%</td>
+<td>-0.15</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '无面人')">
+<td><b>无面人</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">17.2%</td>
+<td>10.9%</td>
+<td>-0.17</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '医生')">
+<td><b>医生</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.9%</td>
+<td>27.6%</td>
+<td>-0.19</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '闪光弹')">
+<td><b>闪光弹</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">28.3%</td>
+<td>2%</td>
+<td>-0.21</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '守卫')">
+<td><b>守卫</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.4%</td>
+<td>4.7%</td>
+<td>-0.23</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '收债人')">
+<td><b>收债人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">26.5%</td>
+<td>5.5%</td>
+<td>-0.24</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '考古学家')">
+<td><b>考古学家</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.1%</td>
+<td>7.5%</td>
+<td>-0.26</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '咒术师')">
+<td><b>咒术师</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">26.3%</td>
+<td>5.3%</td>
+<td>-0.27</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '勇者')">
+<td><b>勇者</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.6%</td>
+<td>10.9%</td>
+<td>-0.28</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '市长')">
+<td><b>市长</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53%</td>
+<td>7.8%</td>
+<td>-0.28</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '小丑')">
+<td><b>小丑</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">15.1%</td>
+<td>9.1%</td>
+<td>-0.30</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '守望者')">
+<td><b>守望者</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.9%</td>
+<td>15.1%</td>
+<td>-0.33</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '孙悟空')">
+<td><b>孙悟空</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">26.7%</td>
+<td>2.9%</td>
+<td>-0.36</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '饕餮')">
+<td><b>饕餮</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">17.2%</td>
+<td>4.1%</td>
+<td>-0.37</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '焰火师')">
+<td><b>焰火师</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">12.8%</td>
+<td>8.2%</td>
+<td>-0.38</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '小黑')">
+<td><b>小黑</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">27%</td>
+<td>1.2%</td>
+<td>-0.38</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '诱饵')">
+<td><b>诱饵</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.7%</td>
+<td>12.9%</td>
+<td>-0.39</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '怪兽')">
+<td><b>怪兽</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">12.2%</td>
+<td>7.4%</td>
+<td>-0.41</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '国王')">
+<td><b>国王</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.9%</td>
+<td>9.8%</td>
+<td>-0.45</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '换票师')">
+<td><b>换票师</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.8%</td>
+<td>17.4%</td>
+<td>-0.47</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '狱卒')">
+<td><b>狱卒</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.7%</td>
+<td>9.8%</td>
+<td>-0.48</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '预言家')">
+<td><b>预言家</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.1%</td>
+<td>20.8%</td>
+<td>-0.52</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '哪吒')">
+<td><b>哪吒</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">49.9%</td>
+<td>20.5%</td>
+<td>-0.55</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '奶龙')">
+<td><b>奶龙</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">8.1%</td>
+<td>3.8%</td>
+<td>-0.56</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '工程师')">
+<td><b>工程师</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50%</td>
+<td>14%</td>
+<td>-0.62</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '管道工')">
+<td><b>管道工</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.1%</td>
+<td>6.4%</td>
+<td>-0.63</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '保安')">
+<td><b>保安</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.2%</td>
+<td>4%</td>
+<td>-0.65</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '猎人')">
+<td><b>猎人</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50%</td>
+<td>12%</td>
+<td>-0.66</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '内鬼')">
+<td><b>内鬼</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">23.4%</td>
+<td>1.8%</td>
+<td>-0.66</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '守夜人')">
+<td><b>守夜人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">22.7%</td>
+<td>3.2%</td>
+<td>-0.66</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '黑客')">
+<td><b>黑客</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.5%</td>
+<td>6.5%</td>
+<td>-0.72</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '魔术师')">
+<td><b>魔术师</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.6%</td>
+<td>9.1%</td>
+<td>-0.91</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '情报员')">
+<td><b>情报员</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.9%</td>
+<td>6.7%</td>
+<td>-0.92</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '侦探')">
+<td><b>侦探</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.3%</td>
+<td>8.4%</td>
+<td>-0.96</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '船员')">
+<td><b>船员</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">45.4%</td>
+<td>6.1%</td>
+<td>-1.32</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="role-detail" id="detail-特别行动单人排位"></div>
+</div><div class="mode-section" id="section-巅峰赛">
+<div class="mode-title">Peak Tournament <span class="mode-badge">2026-04-22</span></div>
+<div class="ai-summary">T1顶尖：双面人(43%)、幻影(20.5%)、摄魂怪(48.4%)；弱势关注：时间之主(45.7%)、单面人(43.3%)、卧底(45.6%)；最大异动：时间刺客↑18.8%</div>
+
+<div class="chart-card">
+<div class="chart-title">📈 胜率趋势（折线图）</div>
+<div class="controls">
+<div style="display:flex;gap:4px;align-items:center;">
+<label>角色：</label>
+<select id="multi-巅峰赛" multiple size="3" style="width:150px;">
+<option value="换票师" selected>换票师</option><option value="勇者" selected>勇者</option><option value="考古学家" selected>考古学家</option><option value="时间之主" selected>时间之主</option><option value="卧底" selected>卧底</option><option value="工程师" >工程师</option><option value="守卫" >守卫</option><option value="保安" >保安</option><option value="单面人" >单面人</option><option value="光之巨人" >光之巨人</option><option value="市长" >市长</option><option value="老兵" >老兵</option><option value="猎人" >猎人</option><option value="守望者" >守望者</option><option value="警长" >警长</option><option value="魔术师" >魔术师</option><option value="诱饵" >诱饵</option><option value="武士" >武士</option><option value="管道工" >管道工</option><option value="医生" >医生</option><option value="侦探" >侦探</option><option value="预言家" >预言家</option><option value="情报员" >情报员</option><option value="狱卒" >狱卒</option><option value="黑客" >黑客</option><option value="哪吒" >哪吒</option><option value="国王" >国王</option><option value="时间刺客" >时间刺客</option><option value="女帝" >女帝</option><option value="摄魂怪" >摄魂怪</option>
+</select>
+</div>
+<button onclick="updateLineChart('巅峰赛')" class="active">更新图表</button>
+</div>
+<div class="chart-container"><canvas id="line-巅峰赛"></canvas></div>
+</div>
+
+<div class="chart-card">
+<div class="chart-title">📊 角色对比（柱状图 - Top 2026-04-22）</div>
+<div class="controls">
+<select id="bar-mode-巅峰赛" onchange="updateBarChart('巅峰赛')">
+<option value="诸神排位" >Gods Ranking</option><option value="特别行动单人排位" >Special Ops Solo</option><option value="巅峰赛" selected>Peak Tournament</option>
+</select>
+<select id="bar-date-巅峰赛" onchange="updateBarChart('巅峰赛')">
+<option value="2026-04-13">2026-04-13</option><option value="2026-04-14">2026-04-14</option><option value="2026-04-15">2026-04-15</option><option value="2026-04-16">2026-04-16</option><option value="2026-04-19">2026-04-19</option><option value="2026-04-20">2026-04-20</option><option value="2026-04-22">2026-04-22</option>
+</select>
+</div>
+<div class="chart-container"><canvas id="bar-巅峰赛"></canvas></div>
+</div>
+
+<div class="table-section">
+<div class="table-title">📋 T1-T4 分级表（2026-04-22）</div>
+<div class="change-tags">
+<span class="change-tag up">时间刺客 +18.8%</span><span class="change-tag down">侦探 -18%</span><span class="change-tag down">预言家 -16.1%</span><span class="change-tag down">国王 -15.9%</span><span class="change-tag down">黑客 -14.8%</span><span class="change-tag up">孙悟空 +14.5%</span><span class="change-tag down">老兵 -13.8%</span><span class="change-tag up">闪光弹 +13.7%</span>
+</div>
+<table class="tier-table">
+<thead><tr><th>角色</th><th>阵营</th><th>胜率</th><th>登场率</th><th>综合分</th><th>等级</th></tr></thead>
+<tbody>
+<tr onclick="showDetail('巅峰赛', '2026-04-22', '双面人')">
+<td><b>双面人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">43%</td>
+<td>95%</td>
+<td>1.88</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '幻影')">
+<td><b>幻影</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">20.5%</td>
+<td>35.7%</td>
+<td>1.31</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '摄魂怪')">
+<td><b>摄魂怪</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">48.4%</td>
+<td>32.9%</td>
+<td>1.30</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '时间刺客')">
+<td><b>时间刺客</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">54%</td>
+<td>11.2%</td>
+<td>1.08</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '清洁工')">
+<td><b>清洁工</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">47%</td>
+<td>15.3%</td>
+<td>0.81</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '女帝')">
+<td><b>女帝</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">48.9%</td>
+<td>10.3%</td>
+<td>0.76</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '换票师')">
+<td><b>换票师</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">49.6%</td>
+<td>30.4%</td>
+<td>0.68</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '小丑')">
+<td><b>小丑</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">17.1%</td>
+<td>13.2%</td>
+<td>0.60</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '恶魔')">
+<td><b>恶魔</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">20.5%</td>
+<td>10%</td>
+<td>0.59</td>
+<td><span class="tier-badge" style="background:#ef444422;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '赏金猎人')">
+<td><b>赏金猎人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.2%</td>
+<td>9.6%</td>
+<td>0.40</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '欺诈师')">
+<td><b>欺诈师</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.3%</td>
+<td>9.1%</td>
+<td>0.38</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '闪光弹')">
+<td><b>闪光弹</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">45.8%</td>
+<td>6.2%</td>
+<td>0.31</td>
+<td><span class="tier-badge" style="background:#f59e0b22;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '搬运工')">
+<td><b>搬运工</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.9%</td>
+<td>7.3%</td>
+<td>0.30</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '警长')">
+<td><b>警长</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.7%</td>
+<td>99.9%</td>
+<td>0.29</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '忍者')">
+<td><b>忍者</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.7%</td>
+<td>9.9%</td>
+<td>0.28</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '勇者')">
+<td><b>勇者</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">47.2%</td>
+<td>23.4%</td>
+<td>0.28</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '伪人')">
+<td><b>伪人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.9%</td>
+<td>6.8%</td>
+<td>0.27</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '诱饵')">
+<td><b>诱饵</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.4%</td>
+<td>99.8%</td>
+<td>0.26</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '考古学家')">
+<td><b>考古学家</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">47.2%</td>
+<td>20.2%</td>
+<td>0.20</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '狙击手')">
+<td><b>狙击手</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">43.7%</td>
+<td>6.7%</td>
+<td>0.17</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '大胃王')">
+<td><b>大胃王</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">12.2%</td>
+<td>11.1%</td>
+<td>0.17</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '变色龙')">
+<td><b>变色龙</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.5%</td>
+<td>8.1%</td>
+<td>0.13</td>
+<td><span class="tier-badge" style="background:#22c55e22;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '时间之主')">
+<td><b>时间之主</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">45.7%</td>
+<td>21.7%</td>
+<td>0.01</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '单面人')">
+<td><b>单面人</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.3%</td>
+<td>37.5%</td>
+<td>-0.10</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '卧底')">
+<td><b>卧底</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">45.6%</td>
+<td>14.5%</td>
+<td>-0.14</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '暗之巨人')">
+<td><b>暗之巨人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.9%</td>
+<td>7.1%</td>
+<td>-0.19</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '焰火师')">
+<td><b>焰火师</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">9.4%</td>
+<td>9.7%</td>
+<td>-0.22</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '女巫')">
+<td><b>女巫</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">38.4%</td>
+<td>10.4%</td>
+<td>-0.23</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '光之巨人')">
+<td><b>光之巨人</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.1%</td>
+<td>29.6%</td>
+<td>-0.23</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '间谍')">
+<td><b>间谍</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.7%</td>
+<td>6.5%</td>
+<td>-0.24</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '武士')">
+<td><b>武士</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.3%</td>
+<td>47.2%</td>
+<td>-0.28</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '怪兽')">
+<td><b>怪兽</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">8.9%</td>
+<td>9.2%</td>
+<td>-0.28</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '工程师')">
+<td><b>工程师</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">44.1%</td>
+<td>22.4%</td>
+<td>-0.29</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '咒术师')">
+<td><b>咒术师</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">38.5%</td>
+<td>8.7%</td>
+<td>-0.31</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '守望者')">
+<td><b>守望者</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.1%</td>
+<td>30.8%</td>
+<td>-0.31</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '猎人')">
+<td><b>猎人</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.5%</td>
+<td>26.7%</td>
+<td>-0.34</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '捣蛋鬼')">
+<td><b>捣蛋鬼</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40%</td>
+<td>5.4%</td>
+<td>-0.36</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '守卫')">
+<td><b>守卫</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.9%</td>
+<td>19.9%</td>
+<td>-0.37</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '老兵')">
+<td><b>老兵</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.7%</td>
+<td>23.3%</td>
+<td>-0.42</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '保安')">
+<td><b>保安</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.9%</td>
+<td>16.2%</td>
+<td>-0.43</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '市长')">
+<td><b>市长</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.9%</td>
+<td>22%</td>
+<td>-0.44</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '吸血鬼')">
+<td><b>吸血鬼</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">36%</td>
+<td>8.7%</td>
+<td>-0.49</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '饕餮')">
+<td><b>饕餮</b></td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">4.7%</td>
+<td>11.1%</td>
+<td>-0.50</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '孙悟空')">
+<td><b>孙悟空</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">37.9%</td>
+<td>5%</td>
+<td>-0.56</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '守夜人')">
+<td><b>守夜人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">36%</td>
+<td>7.4%</td>
+<td>-0.59</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '医生')">
+<td><b>医生</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">39.3%</td>
+<td>27.2%</td>
+<td>-0.61</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '魔术师')">
+<td><b>魔术师</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.7%</td>
+<td>16.8%</td>
+<td>-0.65</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '管道工')">
+<td><b>管道工</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.1%</td>
+<td>21.1%</td>
+<td>-0.71</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '侦探')">
+<td><b>侦探</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.6%</td>
+<td>23.6%</td>
+<td>-0.76</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '小黑')">
+<td><b>小黑</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">34.8%</td>
+<td>5.3%</td>
+<td>-0.76</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '预言家')">
+<td><b>预言家</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.5%</td>
+<td>22.6%</td>
+<td>-0.81</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '情报员')">
+<td><b>情报员</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.4%</td>
+<td>20%</td>
+<td>-0.87</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '狱卒')">
+<td><b>狱卒</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.2%</td>
+<td>18%</td>
+<td>-0.92</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '收债人')">
+<td><b>收债人</b></td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30.2%</td>
+<td>7.1%</td>
+<td>-0.95</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '黑客')">
+<td><b>黑客</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">35.5%</td>
+<td>22.6%</td>
+<td>-1.02</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '哪吒')">
+<td><b>哪吒</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">34.3%</td>
+<td>20.8%</td>
+<td>-1.15</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '国王')">
+<td><b>国王</b></td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">33.6%</td>
+<td>21.6%</td>
+<td>-1.18</td>
+<td><span class="tier-badge" style="background:#6b728022;color:#6b7280">T4 弱势</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="role-detail" id="detail-巅峰赛"></div>
+</div><script>
+const baselines = {"诸神排位":{"astronaut":{"wr_p50":46.8,"wr_p90":56.3,"pr_p50":2.5,"pr_p90":13.1},"invader":{"wr_p50":42.3,"wr_p90":48.1,"pr_p50":2.2,"pr_p90":9.8},"neutral":{"wr_p50":26.8,"wr_p90":63.6,"pr_p50":2.1,"pr_p90":11.6}},"特别行动单人排位":{"astronaut":{"wr_p50":53.7,"wr_p90":57.4,"pr_p50":10.4,"pr_p90":34.9},"invader":{"wr_p50":28.7,"wr_p90":36.5,"pr_p50":4.8,"pr_p90":15.1},"neutral":{"wr_p50":22.2,"wr_p90":56.8,"pr_p50":10.8,"pr_p90":24.1}},"巅峰赛":{"astronaut":{"wr_p50":45.5,"wr_p90":51.6,"pr_p50":23.5,"pr_p90":42.5},"invader":{"wr_p50":41.4,"wr_p90":49.8,"pr_p50":8.5,"pr_p90":16},"neutral":{"wr_p50":10,"wr_p90":20.5,"pr_p50":12.1,"pr_p90":20.7}}};
+const modeNames = {"诸神排位":"Gods Ranking","特别行动单人排位":"Special Ops Solo","巅峰赛":"Peak Tournament"};
+const factionNames = {"astronaut":"Astronaut","invader":"Invader","neutral":"Neutral"};
+const allData = {"诸神排位":{"2026-04-10":{"astronaut":[["柯南",61.8,3.6,2.6,0.6],["考古学家",59.2,0.5,11.8,0.1],["灰原哀",56.3,0.4,6.1,0.1],["武士",55.7,1.6,0.9,0.5],["时间之主",55.1,1.8,5,0.6],["诱饵",53.5,1.3,1.4,0.5],["毛利兰",53.4,0.6,3.6,0.2],["逍遥",52.4,0.4,6.3,0.1],["国王",52.1,0.9,0.4,0.1],["哪吒",51.3,2.4,2,0.7],["卧底",51,0.7,6.1,0.3],["葫芦兄弟",51,9,5.3,-3.8],["光之巨人",50.6,1.8,5.7,0.5],["勇者",50.5,1.2,2.7,0.2],["狱卒",50.4,1,2.8,0.2],["法官",49,1.1,1,0.3],["警长",48.3,28.9,3.3,3.2],["单面人",47.6,8.5,1.5,2.3],["守望者",47.4,7.5,5.5,1.5],["船员",45.3,178.8,3.3,20.8],["换票师",44.9,1.8,1.9,0.5],["魔术师",44.8,1.2,4.5,0.2],["医生",44.5,8.6,1.7,1.5],["老兵",42.8,6.9,2.6,0.8],["守卫",42.7,2.8,3.5,0.4],["侦探",42.6,2.1,-0.3,0.6],["管道工",42.3,5.5,2.6,0.6],["工程师",42.1,6.3,4.4,0.9],["预言家",41.2,12.9,1.7,2],["猎人",40.8,3.2,2.4,0.3],["情报员",40.5,2.9,2.8,0.1],["保安",40,2,-0.4,-0.1],["黑客",39.6,5.7,3,0.5],["市长",35.2,1.8,1.9,0.2]],"invader":[["蛇精",51.7,0.1,8.5,0],["收割者",48.6,0.8,2.5,0.2],["暗之巨人",48.2,0.8,6.4,0.1],["教父",46.7,3.2,-2.3,0.5],["鬼新娘",46,0.9,3.6,0.3],["女帝",45.8,0.8,-0.9,0.3],["忍者",44.7,2.2,-4.5,0.3],["伪人",44.5,2,-3.6,0.3],["摄魂怪",44.1,4,-1.3,0.9],["熊大熊二",44,0.6,-1.3,0.2],["清洁工",43,6.4,-1.8,1.3],["赏金猎人",42.8,2.9,-1.6,0.6],["小黑",42.7,0.2,8.9,0.1],["狙击手",42.5,25,-3.2,-0.1],["女巫",41.7,3.3,-2.6,0.6],["欺诈师",41.4,1.6,-3.7,-0.3],["时间刺客",41.4,2.1,-2.1,0.4],["孙悟空",41.1,2.4,-2.4,0.1],["双面人",40.4,11.9,-1.2,2.7],["间谍",40.3,3.4,-3.6,0.6],["变色龙",40.2,38,-3.8,-2.9],["内鬼",39.2,5,-3.3,0.1],["吸血鬼",39,1.4,-5.9,0.3],["闪光弹",38.8,1.2,-3.8,0.1],["捣蛋鬼",38.3,0.4,-6.3,0],["搬运工",38.1,0.9,-2.6,-0.1],["咒术师",37.3,4,-2.4,0.5],["收债人",35.8,1,1,0],["守夜人",35.2,1.3,-3.2,0.3]],"neutral":[["幸存者",72.2,3.8,-0.4,0.9],["墙头草",64.4,0.8,1.8,0.2],["丘比特",52.3,1.9,-0.5,0.2],["小蜜蜂",52.1,4.3,1.3,1],["怪盗",30.9,0.9,-2.1,0.2],["神子",29.2,0.5,-0.5,0.1],["恶魔",28.5,1.2,-3,0.2],["奶龙",27.6,0.7,1.3,0.2],["焰火师",26,4.8,-1.5,1.4],["无面人",20.1,2.1,-4.7,0.2],["小丑",18.8,5.1,0.1,0.5],["大胃王",15.3,9.1,0.2,0.8],["怪兽",12.9,17,-0.3,-1.4],["饕餮",11.3,1.3,-1.6,0.2],["幻影",7.6,1.7,-3.3,0.3]]},"2026-04-11":{"astronaut":[["柯南",56.9,2.6,3.3,0.2],["诱饵",53,1,6.3,0.2],["考古学家",52.5,0.3,-0.9,0],["武士",52.1,1.3,0.7,0.3],["时间之主",52,2.1,-1.9,0.3],["国王",50.4,0.7,2.5,0],["逍遥",49.5,0.3,8.8,0.1],["灰原哀",49.3,0.3,3.6,0.1],["勇者",48,1.1,1.3,0.2],["哪吒",47.7,1.8,1.7,0.4],["狱卒",47.4,0.8,4.5,0.2],["毛利兰",47.2,0.4,-2.1,0],["法官",46.7,0.9,1.1,0.2],["光之巨人",46.4,1.5,3.4,0.2],["葫芦兄弟",46,8.8,4.1,-1.1],["警长",45.1,26.9,1.9,2.4],["单面人",44.9,7,2.9,1.3],["换票师",44.4,1.6,-1,0.4],["卧底",43.4,0.6,-1.3,0.1],["魔术师",43.4,1,3.8,0.1],["守望者",42.5,6.8,0.8,1],["船员",41.9,168.3,1.8,15.5],["守卫",41.7,2.4,2.6,0.2],["侦探",41.5,1.8,2,0.5],["医生",40.7,7.7,0.5,1.1],["老兵",40.7,6.7,1.3,0.8],["管道工",40,5.4,0.7,0.7],["预言家",39.6,12.1,0.4,1.2],["工程师",39.1,5.9,1.7,0.6],["保安",38.8,2,0,0.2],["情报员",38.1,2.9,1.2,0.3],["猎人",37.4,3,0.8,0.3],["黑客",36.8,5.4,0.9,0.6],["市长",34.7,1.6,-0.3,0]],"invader":[["蛇精",51.7,0,6,-0.1],["教父",49.9,2.8,0,0.5],["伪人",48,1.8,-2.7,0.2],["收割者",46.4,0.7,0.6,0.1],["赏金猎人",46,2.6,-1.4,0.3],["忍者",45.8,2.3,-0.7,0.3],["清洁工",45.2,5.6,-0.9,0.9],["摄魂怪",44.9,3.3,-2.3,0.5],["熊大熊二",44.4,0.4,-2.5,0],["女帝",44.3,0.7,0.8,0.1],["时间刺客",44.3,1.9,-4.3,0.3],["鬼新娘",43.6,0.8,-0.6,0.1],["小黑",43.4,0.2,-4.5,0.1],["狙击手",43.3,25.9,-1,-0.6],["暗之巨人",43.2,0.8,-2.2,0.1],["吸血鬼",43.1,1.3,-0.8,0.2],["捣蛋鬼",43.1,0.3,1.6,0],["间谍",42.7,3.1,-0.2,0.5],["双面人",42.3,10,-1.5,1.6],["闪光弹",42,1.1,-0.2,0.1],["女巫",41.7,3,-2.7,0.6],["欺诈师",41.4,1.5,-1.3,-0.1],["变色龙",41.1,39.4,-2.6,-1.6],["搬运工",40.6,0.9,-2.5,0],["孙悟空",40.3,2.3,0.5,0.3],["内鬼",39.3,5,-1.4,0],["守夜人",38.1,1.1,1.6,0.2],["咒术师",37.1,3.8,-3.4,0.4],["收债人",33.4,0.7,-5,-0.1]],"neutral":[["幸存者",69,3.1,-2.5,0.3],["墙头草",58.9,0.6,-0.6,0.2],["小蜜蜂",49.7,3.8,-1.7,0.7],["丘比特",48.8,1.5,-1.6,0],["奶龙",37.1,0.6,0.1,0],["恶魔",31.2,1.2,1.9,0.1],["神子",28.9,0.5,-2.2,0.1],["怪盗",28.3,0.8,-2.5,0.1],["焰火师",28,4.3,-1,1],["无面人",22.9,1.9,1.4,0.3],["小丑",18.7,4.3,0.2,0.1],["大胃王",17.9,9,-0.9,1],["饕餮",15,1.2,-1.4,0.1],["怪兽",14.9,17.5,-0.4,-0.7],["幻影",10.6,1.5,0.1,0.2]]},"2026-04-12":{"astronaut":[["柯南",57.6,2.4,0.7,0.3],["毛利兰",51.9,0.5,0.6,0.1],["考古学家",51.8,0.4,2,0.2],["国王",51.4,0.8,0.4,0.2],["勇者",50.2,1,0.3,0],["时间之主",50.1,1.3,0,0.1],["武士",48.8,1.2,-1.1,0.2],["哪吒",47.5,1.5,-0.8,0.3],["逍遥",46.9,0.2,1,0],["卧底",46.6,0.6,-1,0.1],["诱饵",46.2,0.8,-3.6,0],["灰原哀",46,0.2,2.3,0],["换票师",45.8,1.4,0.3,0.2],["葫芦兄弟",45.2,9.5,4.1,0.5],["光之巨人",44.8,1.3,1.5,0.1],["法官",44.8,0.8,-1.2,0.1],["单面人",43.9,6.4,0,0.9],["警长",43.8,25.8,0.4,1.5],["狱卒",43.1,0.7,-3.5,0],["管道工",42.4,5.7,1.1,0.5],["守望者",41.2,6.8,0.5,0.7],["船员",40.9,169.9,0.9,12.5],["侦探",40.9,1.7,1,0.3],["医生",40.8,8,0.7,1],["老兵",40.3,6.8,1.6,0.7],["预言家",40,13.3,0.4,0.7],["保安",39.4,2.1,0.5,0],["魔术师",39.3,1,1.4,0.2],["守卫",39.2,2.5,1.3,0],["工程师",38.4,6.5,0.3,0.6],["情报员",37.9,2.9,2.4,0.2],["猎人",36.6,2.9,1.4,0.1],["黑客",35.7,5.7,0.2,0.6],["市长",35.1,1.8,1.7,0.1]],"invader":[["伪人",48.7,1.7,0.5,0.1],["教父",48.2,2.7,-0.1,0.6],["小黑",47.8,0.1,8,0],["吸血鬼",46.4,1.1,2.7,0.1],["摄魂怪",45.9,3.1,-0.3,0.3],["忍者",45.4,2.3,-1.8,0.2],["收割者",45,0.6,1.2,0.1],["清洁工",44.4,5.5,-0.6,0.9],["熊大熊二",44.2,0.3,-3.1,-0.1],["赏金猎人",43.5,2.1,-1.2,0.2],["时间刺客",43.1,1.9,-1.3,0.3],["鬼新娘",42.9,0.6,1.3,0],["闪光弹",42.6,1.2,2.2,0.2],["欺诈师",42.4,1.4,1.1,-0.1],["暗之巨人",42.3,0.8,1.6,0.1],["女帝",42.2,0.5,-0.2,0],["女巫",42,3.1,-0.2,0.5],["狙击手",42,26.8,-0.9,-0.1],["双面人",41.5,9.2,0.1,1.4],["变色龙",41.4,41.2,-0.6,-1.2],["蛇精",41.4,0.1,-1,0],["捣蛋鬼",40.8,0.3,0.2,0],["间谍",40.5,3.2,-1.3,0.4],["孙悟空",39.5,2.4,-0.7,0.3],["咒术师",39.3,4.1,-0.1,0.5],["内鬼",38.2,5.4,-0.3,0],["搬运工",37.7,1,-4.2,0.1],["守夜人",34.9,1.1,0.3,0.1],["收债人",33.7,0.6,-3.2,-0.1]],"neutral":[["幸存者",68.5,2.8,1,0.3],["墙头草",63.8,0.6,2.1,0.2],["小蜜蜂",52.3,3.4,-0.1,0.6],["丘比特",51.7,1.3,0.8,0],["焰火师",35,4.8,-0.6,1],["恶魔",31.4,1.1,0,0],["怪盗",31.1,0.8,-0.5,0.2],["神子",30.3,0.4,-3.6,0.1],["奶龙",28.4,0.5,-1.2,0.1],["无面人",21.6,1.5,-0.6,0.1],["小丑",19.6,4.7,-0.4,0.3],["大胃王",18.7,9.3,-0.2,1.1],["怪兽",18,18.2,-0.3,-0.9],["饕餮",11.2,1.2,-2.6,0.1],["幻影",8.7,1.5,-0.7,0.2]]},"2026-04-13":{"astronaut":[["柯南",63.3,4.1,5.4,1.8],["时间之主",62.9,3,8.7,1.3],["逍遥",62.4,0.3,16.2,0],["诱饵",58.7,1.5,8.4,0.7],["考古学家",56.6,0.5,5.6,0.2],["国王",55.9,0.9,1.9,0.1],["哪吒",55.5,3,5.3,1.5],["光之巨人",54.3,1.8,10.1,0.5],["葫芦兄弟",53.9,11.3,11.6,1.7],["武士",53.2,1.3,-0.6,0.3],["毛利兰",52.7,0.5,1.5,0.1],["换票师",51.9,2,5.5,0.7],["灰原哀",51.7,0.4,-3,0.2],["法官",51,0.9,5.1,0.1],["警长",50.4,28.4,6.7,3.2],["单面人",50.4,7.9,6.2,1.5],["守望者",48.1,8.2,8.4,1.5],["勇者",47.9,1.2,-0.3,0.3],["侦探",47.8,2,9,0.3],["卧底",47.8,0.7,-0.1,0.1],["船员",47.1,188.4,7.3,16.1],["医生",46.1,8.8,6.2,1.2],["魔术师",45.4,1.2,3.8,0.3],["老兵",45.3,7.6,6.6,0.5],["守卫",44.7,2.8,7.2,0],["狱卒",44.7,1,1.5,0.2],["管道工",43.5,6.1,5,0.2],["预言家",43.1,14.1,4.7,0],["保安",42.2,2.2,4.4,-0.1],["猎人",40.5,3.4,6.2,0.3],["情报员",40,3.3,3.8,0.1],["工程师",39.9,6.5,4.3,0],["黑客",39.4,5.9,3.4,0],["市长",33.8,1.6,0.3,-0.4]],"invader":[["蛇精",58.1,0.1,12.9,0],["鬼新娘",43.8,1,-2.5,0.3],["闪光弹",43.2,1.3,1.5,0.2],["伪人",42.8,2.5,-5.8,0.6],["摄魂怪",42.6,4,-4.1,1],["时间刺客",42.5,2.3,-3,0.6],["女帝",42.1,0.8,0.3,0.3],["收割者",42.1,0.8,-0.9,0.2],["忍者",41.7,2.3,-5,0],["熊大熊二",40,0.6,-3.9,0.2],["清洁工",39.7,6.6,-5.5,1.2],["孙悟空",39.4,2.4,-1.9,0],["教父",39.1,3,-6.1,0.7],["狙击手",38.8,26.7,-4.7,-0.8],["间谍",38.7,3.7,-4.7,0.5],["赏金猎人",38.6,2.5,-7.8,0.4],["变色龙",38,38.3,-4.2,-3.8],["双面人",38,11.8,-2.7,3.3],["欺诈师",37.8,1.7,-3.6,0],["小黑",37.7,0.2,-5.3,0.1],["女巫",36.7,3.6,-7.6,0.6],["捣蛋鬼",36.7,0.4,-5.6,0.1],["搬运工",36.5,1.1,-6.2,0.1],["吸血鬼",36.5,1.6,-7.2,0.5],["暗之巨人",35.9,0.8,-4.5,0.1],["咒术师",34.9,4.5,-5.4,0.6],["内鬼",33.7,5.3,-6.3,-0.3],["收债人",32.2,0.9,-5,0.2],["守夜人",30.9,1.5,-5.5,0.4]],"neutral":[["幸存者",73.2,3.8,4.5,1.1],["墙头草",60.2,1.1,-2.2,0.6],["丘比特",56.7,2.2,4.4,0.8],["小蜜蜂",55.1,5.2,4,1.7],["怪盗",36.4,1,5.6,0.3],["奶龙",34.6,0.7,-3.9,0.1],["神子",31.4,0.5,-1.5,0.1],["恶魔",28.7,1.2,-2.9,0.1],["焰火师",25.7,4.7,-2.2,1],["无面人",25.5,2,2.9,0.4],["大胃王",20,10.3,-1.8,0.4],["小丑",18,5.2,-3.1,0.2],["怪兽",16.6,16.9,-0.5,-1.6],["饕餮",16.1,1.5,-0.3,0.2],["幻影",7.7,1.7,-2.5,0.3]]},"2026-04-14":{"astronaut":[["考古学家",60.1,0.4,13.6,-0.1],["逍遥",57.7,0.7,6.8,0.2],["柯南",55.9,4.5,-0.6,0.5],["武士",53.3,1.4,3.1,0],["哪吒",53.1,3.4,3,0.4],["时间之主",52.7,2.2,3.1,-0.1],["勇者",51.9,1.6,3.8,0.3],["国王",51.8,1.2,-0.1,0.1],["诱饵",51.5,1.5,-0.4,0.2],["灰原哀",51.3,0.5,2.9,0],["毛利兰",51,0.7,3.1,0],["葫芦兄弟",49.9,12.1,4,1.5],["警长",46.4,31.9,0.2,0.8],["狱卒",45.6,1.5,2.3,0.4],["法官",45.3,1.1,-1.2,0],["单面人",44.7,9.3,0.9,0.7],["卧底",44.4,0.8,-4.6,0.1],["换票师",44.2,1.8,2.6,0.2],["光之巨人",43.7,1.5,0.5,-0.1],["船员",42.9,204.8,1.3,7.5],["老兵",42.6,8.3,1,0],["魔术师",42.4,1.3,0.4,-0.2],["守卫",41.8,3.5,1.8,0.3],["守望者",41.6,8.6,1.2,0.4],["情报员",41.5,3.9,1.5,-0.2],["医生",41.1,9.2,0.7,0.5],["侦探",40.1,2.5,-0.6,0.4],["预言家",38,14.6,1.3,0.4],["管道工",37.8,6.3,2.3,0],["黑客",37.1,6.4,2.8,-0.1],["市长",35.9,2.1,5.5,0.1],["猎人",35.2,3.5,-1.4,-0.3],["保安",34.2,2.4,-3.9,-0.1],["工程师",33.4,6.6,-1.9,-0.1]],"invader":[["蛇精",61.7,0.2,20.5,0.1],["教父",52.4,4.1,3,0.5],["熊大熊二",51.9,0.9,4.8,0.2],["小黑",49.2,0.2,1.3,0.1],["鬼新娘",48.9,1.3,4.2,0.2],["伪人",48.7,2.7,0.8,0.5],["收割者",48.6,1,3.3,0],["忍者",47.8,2.5,-1.6,0.1],["女帝",47.6,1.3,0.7,0.1],["时间刺客",47.6,2.5,0,0.3],["摄魂怪",46.4,5,-1.6,0.9],["清洁工",46.1,7,-0.2,0.1],["赏金猎人",46.1,2.6,-0.7,-0.2],["女巫",45.9,4.9,0.3,0.2],["双面人",44.2,13,-0.4,1.9],["间谍",43.9,4.1,-0.6,0.3],["搬运工",43.1,1.1,-1.1,-0.2],["狙击手",43.1,25.2,-0.7,-0.4],["吸血鬼",42.4,1.5,-3,0.1],["变色龙",41.9,36.9,-1.8,-1.9],["欺诈师",41.8,1.8,-2.6,-0.2],["暗之巨人",41.2,1,-6.8,0.1],["内鬼",40.6,5.3,0.2,-0.4],["孙悟空",40.6,2.5,-1.9,-0.2],["闪光弹",40.3,1.6,-2.7,0.3],["咒术师",39.7,4.7,-0.6,0.5],["捣蛋鬼",38.3,0.4,-5.9,0],["收债人",36.2,0.8,0.4,-0.2],["守夜人",34.7,1.6,-3.2,0.1]],"neutral":[["幸存者",70.6,4.7,1.7,0.8],["墙头草",64.2,1.3,8.4,0.3],["丘比特",48.8,2.8,0.1,0.3],["小蜜蜂",47.7,6,1.4,0.7],["恶魔",31.5,1.3,-0.8,0],["神子",29.2,0.6,-4.4,0.1],["怪盗",28,1.1,2.5,0.1],["焰火师",26.3,5.1,-2.3,0.9],["大胃王",19.9,10.9,-0.7,-0.4],["奶龙",19,0.7,-6.8,0],["无面人",18.8,2.2,1.3,0.5],["怪兽",16.4,16,-1.2,-0.8],["小丑",16.1,5,2.2,-0.7],["饕餮",10.9,1.3,-1,-0.1],["幻影",5.1,2,-0.2,0.1]]},"2026-04-15":{"astronaut":[["柯南",56.3,4.1,1.9,-0.8],["诱饵",52.7,1.8,1.7,0.4],["武士",52.7,1.5,-2.2,0.1],["勇者",51.8,1.5,3.4,0.2],["国王",51.7,1.2,4.5,0],["时间之主",50.9,2.3,-1.5,0.2],["毛利兰",49.8,0.7,-2.8,-0.2],["葫芦兄弟",49,12.1,1.7,1.3],["哪吒",48.1,3.2,-0.2,0],["考古学家",47.4,0.4,-4.2,0],["法官",46.8,1.3,4.2,0.1],["卧底",46.6,0.8,-3.8,0.1],["单面人",45.4,9.3,1.4,0],["警长",45.3,30.6,0.8,-0.1],["狱卒",44.5,1.3,-2,0.1],["守卫",43.7,3,1.7,-0.1],["光之巨人",43.7,1.7,-3.3,0.2],["船员",43.3,196.2,1.3,-1.8],["换票师",43.1,2.1,-0.5,0.3],["老兵",42.6,8.2,2.1,-0.2],["逍遥",42.3,0.4,-3.8,-0.1],["侦探",42,2.4,0.2,0.1],["守望者",41.9,8.3,-0.4,-0.2],["保安",40.7,2.4,4.7,0.1],["医生",40.6,8.9,0.5,-0.3],["灰原哀",40.6,0.5,-10.6,-0.1],["预言家",39.9,13.3,1.7,-0.8],["工程师",39.5,6.4,3,-0.1],["魔术师",39.1,1.3,2.3,-0.1],["管道工",39,6,-0.3,-0.2],["情报员",38.6,3.5,2,-0.1],["黑客",38.2,6.2,2.4,0.2],["猎人",37.9,3.5,2.9,-0.2],["市长",36.2,1.7,1.2,-0.4]],"invader":[["教父",54,4,-0.5,0.3],["蛇精",52.5,0.2,6.3,0.1],["女帝",49.4,1.2,-1.6,-0.1],["赏金猎人",49.2,3.5,3.7,0.5],["暗之巨人",48.1,1,0.3,-0.1],["摄魂怪",47.4,4.7,0.3,0],["鬼新娘",47.4,1.3,-0.6,0.4],["忍者",47.2,2.4,-3.9,-0.1],["小黑",47.2,0.2,1.3,0],["捣蛋鬼",46.7,0.5,1.1,0.1],["吸血鬼",46.6,1.4,1.7,0.1],["收割者",46.5,0.9,-6,0.1],["清洁工",46.2,6.9,0.4,-0.1],["时间刺客",46,2.2,0.8,-0.4],["伪人",45.4,2.5,-2.8,0.2],["熊大熊二",45,0.8,-7.1,0],["双面人",44.9,12.9,-1,0.2],["狙击手",43.3,24.5,-1.1,-0.6],["女巫",43.2,4.1,1.6,-0.3],["间谍",42.9,4,-3.6,0],["变色龙",42.4,36.7,-0.7,-0.7],["欺诈师",42.4,1.8,-0.7,-0.1],["收债人",41.7,1,4.5,-0.1],["孙悟空",41.4,2.4,-1.3,-0.1],["咒术师",39.7,4.5,-2.3,0.3],["守夜人",38.5,1.6,-4.5,0.1],["搬运工",38.5,1,-1.6,-0.2],["闪光弹",38.2,1.6,-8.2,0.3],["内鬼",38,5.1,-1.8,-0.2]],"neutral":[["幸存者",69.7,4.6,-0.4,0.3],["墙头草",57,1.4,-2.5,0.4],["丘比特",48.2,2.5,-0.3,0.3],["小蜜蜂",47.5,5.7,1.2,0],["神子",31.9,0.6,-1.4,-0.1],["恶魔",29.2,1.3,-2,0],["怪盗",24.9,1,-2.4,0],["无面人",21.6,2,2.4,0.1],["奶龙",21.1,0.7,-4.1,-0.1],["焰火师",18.4,4.5,-2.2,0.5],["小丑",17.5,4.8,0.9,-0.8],["饕餮",17.4,1.4,-1,-0.4],["大胃王",17.1,10.6,-1.1,-0.7],["幻影",16.7,2.5,2.1,0.1],["怪兽",16.3,16,1,0]]},"2026-04-16":{"astronaut":[["柯南",58.9,4.1,-0.2,-0.2],["时间之主",56.9,2.1,1.2,-0.6],["考古学家",55.7,0.5,-3.5,0],["武士",54.7,1.5,-0.6,-0.2],["勇者",54.7,1.7,9.2,0.4],["毛利兰",53,0.6,4.2,-0.1],["国王",52.2,1.2,-3,0],["葫芦兄弟",52,11,2.4,-0.8],["诱饵",51.8,1.4,1,-0.4],["灰原哀",51.4,0.5,-1.3,-0.1],["哪吒",49.8,2.7,-2.1,-0.9],["法官",49.4,1,6.3,-0.2],["卧底",47.9,0.7,2.2,0],["警长",47.5,29.6,-0.2,-0.1],["逍遥",47,0.4,-4.2,-0.1],["换票师",46.8,1.9,0,-0.3],["侦探",46.2,2.3,3.6,-0.1],["船员",44.5,184.4,-0.4,-11.9],["魔术师",44.3,1.2,1.1,-0.4],["单面人",43.8,8.5,-2.4,-0.6],["光之巨人",43.2,1.4,-0.1,-0.4],["老兵",42.8,7.8,-1.2,-0.6],["守望者",42.3,7.4,-3.3,-0.9],["守卫",42.2,2.8,0.8,0],["医生",42,8.7,-2.3,-0.6],["狱卒",41.8,0.9,-5.8,-0.2],["保安",41.4,1.9,2.9,-0.2],["工程师",40.8,6.3,0.4,-0.3],["猎人",40.1,3.4,2.4,-0.4],["预言家",39.7,12.7,-0.3,-0.7],["情报员",39.6,3.3,1.4,-0.1],["管道工",39.4,5.7,-1.1,-0.5],["黑客",37.8,6,0.7,-0.1],["市长",36.8,1.7,-1.1,-0.1]],"invader":[["忍者",49,2,3.7,-0.3],["伪人",49,2.2,3.1,0],["赏金猎人",48.4,3.1,3,-0.2],["摄魂怪",47.9,4.1,-1.7,-0.7],["女帝",47.5,1,-0.3,-0.6],["教父",47.3,3.5,-2.3,-0.3],["鬼新娘",47,1.1,-1.3,-0.1],["时间刺客",46.6,2.3,4.8,-0.1],["暗之巨人",46.1,1,-0.7,-0.1],["小黑",45.6,0.2,-3.6,0],["蛇精",45.5,0.2,-10.9,0],["清洁工",45.2,6.2,-1.1,-1.1],["吸血鬼",44.9,1.4,1.6,0],["收割者",44.9,0.7,0.1,-0.2],["捣蛋鬼",44.1,0.5,6.2,0.1],["狙击手",43.3,25.1,2.1,0],["闪光弹",42.8,1.3,1.3,0],["孙悟空",41.7,2.4,4.3,-0.3],["双面人",41.3,12.3,-0.1,-0.3],["变色龙",41.2,37.8,0.1,0.9],["欺诈师",41,1.7,-5.3,-0.1],["间谍",40.6,4,0.7,0.2],["女巫",40,3.7,-0.8,-0.2],["熊大熊二",39.8,0.6,-2.8,-0.1],["内鬼",38.1,5.4,-1.5,0.3],["守夜人",37.8,1.6,2.4,0],["收债人",37.5,0.8,-1,-0.4],["搬运工",36.7,0.9,-0.6,-0.3],["咒术师",36.4,4.5,-1.3,-0.1]],"neutral":[["幸存者",70.4,4.4,0.1,0],["墙头草",59.4,0.8,-5,-0.4],["小蜜蜂",50.8,5.1,1.7,-0.5],["丘比特",49.6,2.2,-2.1,-0.2],["神子",34.7,0.6,-3.9,0],["奶龙",32,0.8,-1.5,0],["怪盗",30.4,1.1,4.5,0.1],["恶魔",28.8,1.3,4.9,0],["焰火师",20.6,4,-1.1,-0.1],["大胃王",19.4,10.5,0.8,-0.6],["无面人",18.5,1.8,-0.4,-0.2],["怪兽",16.4,16.7,-0.6,0.5],["小丑",15.7,4.7,-0.9,-1],["饕餮",13.7,1.3,1.3,-0.3],["幻影",7.4,1.8,1.4,0]]},"2026-04-17":{"astronaut":[["柯南",61,3.9,-0.8,0.3],["考古学家",58.8,0.5,-0.4,0],["武士",56.8,1.6,1.1,0],["葫芦兄弟",56.2,6.9,5.2,-2.1],["国王",55.3,1,3.2,0.1],["时间之主",55.2,2.1,0.1,0.3],["诱饵",54.9,1.3,1.4,0],["逍遥",54.4,0.6,2,0.2],["毛利兰",53.5,0.7,0.1,0.1],["灰原哀",51.2,0.4,-5.1,0],["光之巨人",50.8,1.7,0.2,-0.1],["换票师",50.7,1.7,5.8,-0.1],["卧底",50.6,0.6,-0.4,-0.1],["勇者",50.4,1.4,-0.1,0.2],["警长",50.3,30.2,2,1.3],["哪吒",49.9,2.3,-1.4,-0.1],["单面人",49.8,7.6,2.2,-0.9],["狱卒",49.2,1.1,-1.2,0.1],["法官",49,0.9,0,-0.2],["船员",47.3,170.9,2,-7.9],["守望者",47.2,6.9,-0.2,-0.6],["医生",46.6,8.1,2.1,-0.5],["守卫",46.5,2.6,3.8,-0.2],["侦探",45.6,2,3,-0.1],["保安",45.2,2,5.2,0],["老兵",44.8,6.4,2,-0.5],["管道工",43.4,5.3,1.1,-0.2],["预言家",43.3,11.1,2.1,-1.8],["情报员",43.2,3.3,2.7,0.4],["魔术师",43.2,1.2,-1.6,0],["工程师",42.2,5.9,0.1,-0.4],["猎人",42.2,3.1,1.4,-0.1],["黑客",41.4,5.4,1.8,-0.3],["市长",37,1.7,1.8,-0.1]],"invader":[["熊大熊二",49.6,0.6,5.6,0],["教父",47.6,2.9,0.9,-0.3],["蛇精",45.7,0.1,-6,0],["捣蛋鬼",44.7,0.5,6.4,0.1],["暗之巨人",44.4,0.8,-3.8,0],["赏金猎人",44.3,2.9,1.5,0],["忍者",44.1,2.1,-0.6,-0.1],["摄魂怪",44,4.1,-0.1,0.1],["女帝",43.5,0.7,-2.3,-0.1],["伪人",43.5,1.8,-1,-0.2],["吸血鬼",41.9,1.4,2.9,0],["鬼新娘",41.8,0.8,-4.2,-0.1],["时间刺客",41,2,-0.4,-0.1],["清洁工",40.8,5.8,-2.2,-0.6],["双面人",40.3,11.2,-0.1,-0.7],["狙击手",40.2,23.6,-2.3,-1.4],["孙悟空",40,2.5,-1.1,0.1],["欺诈师",39.8,1.5,-1.6,-0.1],["变色龙",39.5,38,-0.7,0],["收割者",39,0.8,-9.6,0],["搬运工",38.6,1,0.5,0.1],["收债人",38.2,1.1,2.4,0.1],["女巫",38,3,-3.7,-0.3],["间谍",37.9,3.1,-2.4,-0.3],["闪光弹",37.4,1.2,-1.4,0],["咒术师",37.1,4.5,-0.2,0.5],["守夜人",36.8,1.3,1.6,0],["内鬼",36.6,5,-2.6,0],["小黑",34.6,0.2,-8.1,0]],"neutral":[["幸存者",73,3.5,0.8,-0.3],["墙头草",64.7,0.7,0.3,-0.1],["丘比特",54.5,2,2.2,0.1],["小蜜蜂",52.7,5,0.6,0.7],["神子",35.8,0.4,6.6,-0.1],["奶龙",29,0.6,1.4,-0.1],["怪盗",28.5,0.8,-2.4,-0.1],["恶魔",26.2,1.2,-2.3,0],["无面人",21.4,1.7,1.3,-0.4],["焰火师",20.8,6.6,-5.2,1.8],["小丑",17.9,4.1,-0.9,-1],["大胃王",15,8,-0.3,-1.1],["怪兽",12,16.8,-0.9,-0.2],["饕餮",9,1.2,-2.3,-0.1],["幻影",8,1.4,0.4,-0.3]]},"2026-04-18":{"astronaut":[["柯南",56.1,3,-0.8,0.4],["时间之主",55.8,2.5,3.8,0.4],["葫芦兄弟",54.5,5.9,8.5,-2.9],["武士",53.9,1.6,1.8,0.3],["考古学家",53.7,0.4,1.2,0.1],["国王",53.5,0.9,3.1,0.2],["卧底",53,0.7,9.6,0.1],["诱饵",52.2,1,-0.8,0],["逍遥",51.9,0.5,2.4,0.2],["勇者",51.7,1.2,3.7,0.1],["哪吒",50.8,1.6,3.1,-0.2],["灰原哀",50.4,0.3,1.1,0],["毛利兰",50,0.5,2.8,0.1],["警长",47.2,28.5,2.1,1.6],["狱卒",46.8,0.9,-0.6,0.1],["法官",46.4,0.8,-0.3,-0.1],["光之巨人",46,1.6,-0.4,0.1],["换票师",45.5,1.6,1.1,0],["单面人",45.2,7,0.3,0],["守望者",45,6.7,2.5,-0.1],["守卫",44.4,2.6,2.7,0.2],["船员",44,168.2,2.1,-0.1],["老兵",43.1,6.6,2.4,-0.1],["侦探",43,1.7,1.5,-0.1],["保安",42.5,2,3.7,0],["医生",42.4,7.6,1.7,-0.1],["管道工",42,5.1,2,-0.3],["魔术师",41.7,1.1,-1.7,0.1],["预言家",41.2,11.3,1.6,-0.8],["情报员",40.6,2.9,2.5,0],["工程师",39.5,5.8,0.4,-0.1],["猎人",39.3,2.9,1.9,-0.1],["黑客",38.5,5.2,1.7,-0.2],["市长",37.9,1.6,3.2,0]],"invader":[["蛇精",56.9,0.1,5.2,0.1],["教父",49.6,3,-0.3,0.2],["熊大熊二",45.9,0.5,1.5,0.1],["忍者",45.8,2.1,0,-0.2],["摄魂怪",45.6,3.5,0.7,0.2],["赏金猎人",45.5,2.7,-0.5,0.1],["伪人",45.4,1.8,-2.6,0],["暗之巨人",45.3,0.9,2.1,0.1],["鬼新娘",45.2,0.7,1.6,-0.1],["收割者",44.6,0.7,-1.8,0],["时间刺客",44.4,1.9,0.1,0],["吸血鬼",44.3,1.3,1.2,0],["清洁工",44,5.4,-1.2,-0.2],["女帝",42.7,0.6,-1.6,-0.1],["双面人",42.6,10.3,0.3,0.3],["闪光弹",42.5,1.2,0.5,0.1],["间谍",41.5,3.1,-1.2,0],["女巫",41.3,2.8,-0.4,-0.2],["狙击手",41.3,25,-2,-0.9],["变色龙",39.8,39.1,-1.3,-0.3],["欺诈师",39.6,1.4,-1.8,-0.1],["收债人",39.4,0.9,6,0.2],["捣蛋鬼",39.2,0.4,-3.9,0.1],["孙悟空",38.5,2.3,-1.8,0],["内鬼",37.6,5,-1.7,0],["咒术师",37.6,4.1,0.5,0.3],["搬运工",36.9,1,-3.7,0.1],["小黑",36.4,0.1,-7,-0.1],["守夜人",36.1,1.2,-2,0.1]],"neutral":[["幸存者",73.7,3.4,4.7,0.3],["墙头草",65.4,0.6,6.5,0],["小蜜蜂",51.7,4.3,2,0.5],["丘比特",51.6,1.5,2.8,0],["奶龙",33.6,0.7,-3.5,0.1],["神子",32.7,0.4,3.8,-0.1],["恶魔",30.4,1.1,-0.8,-0.1],["怪盗",27.7,0.8,-0.6,0],["焰火师",21.8,5.2,-6.2,0.9],["无面人",21.5,1.8,-1.4,-0.1],["小丑",18.6,3.9,-0.1,-0.4],["大胃王",17.4,8.2,-0.5,-0.8],["怪兽",14.4,17.5,-0.5,0],["饕餮",13.5,1.2,-1.5,0],["幻影",11.2,1.5,0.6,0]]},"2026-04-19":{"astronaut":[["柯南",57.5,2.7,-0.1,0.3],["武士",55.9,1.4,7.1,0.2],["葫芦兄弟",54.9,5.3,9.7,-4.2],["国王",52.8,0.8,1.4,0],["毛利兰",52.7,0.4,0.8,-0.1],["勇者",51.9,1.1,1.7,0.1],["哪吒",50.8,1.6,3.3,0.1],["时间之主",50.6,1.5,0.5,0.2],["卧底",49.8,0.7,3.2,0.1],["灰原哀",49.3,0.3,3.3,0.1],["考古学家",49.1,0.3,-2.7,-0.1],["逍遥",48.7,0.4,1.8,0.2],["诱饵",48.6,1,2.4,0.2],["法官",48.2,0.8,3.4,0],["狱卒",47.4,0.9,4.3,0.2],["光之巨人",46.6,1.4,1.8,0.1],["警长",46.3,27.3,2.5,1.5],["换票师",46.2,1.4,0.4,0],["单面人",45.9,6.4,2,0],["侦探",44.6,1.7,3.7,0],["管道工",43.5,5.5,1.1,-0.2],["医生",43.4,7.8,2.6,-0.2],["船员",43.2,170.3,2.3,0.4],["老兵",42.5,6.8,2.2,0],["魔术师",42.5,1,3.2,0],["守望者",42.2,6.9,1,0.1],["预言家",41.7,12.6,1.7,-0.7],["保安",41.3,2.2,1.9,0.1],["守卫",41.1,2.5,1.9,0],["工程师",41,6.5,2.6,0],["猎人",39.2,3.1,2.6,0.2],["情报员",38.8,3.1,0.9,0.2],["黑客",37.9,5.6,2.2,-0.1],["市长",37.8,1.8,2.7,0]],"invader":[["收割者",48.1,0.6,3.1,0],["教父",47.6,2.6,-0.6,-0.1],["伪人",46.4,1.7,-2.3,0],["熊大熊二",46.1,0.5,1.9,0.2],["摄魂怪",45.9,3.5,0,0.4],["蛇精",45.5,0,4.1,-0.1],["忍者",45.2,2.2,-0.2,-0.1],["鬼新娘",45,0.6,2.1,0],["赏金猎人",44.4,2.2,0.9,0.1],["小黑",43.4,0.1,-4.4,0],["清洁工",42.8,5.3,-1.6,-0.2],["女巫",42.6,2.9,0.6,-0.2],["时间刺客",42.2,1.8,-0.9,-0.1],["欺诈师",41.4,1.3,-1,-0.1],["暗之巨人",41.2,0.9,-1.1,0.1],["吸血鬼",41.1,1.2,-5.3,0.1],["狙击手",41,26.2,-1,-0.6],["女帝",40.6,0.5,-1.6,0],["捣蛋鬼",40.6,0.4,-0.2,0.1],["双面人",40.5,9.5,-1,0.3],["闪光弹",40.3,1.2,-2.3,0],["间谍",40.2,3.1,-0.3,-0.1],["变色龙",39.9,41.1,-1.5,-0.1],["内鬼",37.9,5.3,-0.3,-0.1],["搬运工",37.6,1,-0.1,0],["孙悟空",37.4,2.4,-2.1,0],["守夜人",36.6,1.1,1.7,0],["咒术师",36.3,4.3,-3,0.2],["收债人",35.8,0.7,2.1,0.1]],"neutral":[["幸存者",69.5,3.1,1,0.3],["墙头草",64.2,0.6,0.4,0],["丘比特",54.8,1.2,3.1,-0.1],["小蜜蜂",53,4.2,0.7,0.8],["神子",33.9,0.3,3.6,-0.1],["怪盗",31.7,0.8,0.6,0],["恶魔",29.8,1.1,-1.6,0],["奶龙",28.9,0.5,0.5,0],["焰火师",27.4,4.8,-7.6,0],["无面人",21.2,1.7,-0.4,0.2],["小丑",19.4,4.4,-0.2,-0.3],["大胃王",18.4,8.5,-0.3,-0.8],["怪兽",17.6,18.3,-0.4,0.1],["饕餮",13,1.2,1.8,0],["幻影",9.2,1.4,0.5,-0.1]]},"2026-04-20":{"astronaut":[["毛利兰",62.1,9.3,9.4,8.9],["灰原哀",61.9,8.5,12.6,8.2],["葫芦兄弟",61.7,52.6,6.8,47.3],["柯南",61.4,36.7,3.9,34],["时间之主",60.9,21.6,10.3,20.1],["市长",59.8,8,22,6.2],["法官",59.7,14.6,11.5,13.8],["光之巨人",59.6,33.5,13,32.1],["诱饵",59.5,12.4,10.9,11.4],["工程师",59.1,20.6,18.1,14.1],["考古学家",59.1,7,10,6.7],["警长",59,71.1,12.7,43.8],["武士",58.7,19.3,2.8,17.9],["逍遥",58.6,6.6,9.9,6.2],["单面人",57.3,53.7,11.4,47.3],["老兵",57.1,24,14.6,17.2],["卧底",57,4.1,7.2,3.4],["国王",57,9.2,4.2,8.4],["守卫",56.8,4.7,15.7,2.2],["勇者",56.7,10.1,4.8,9],["黑客",56.6,6.7,18.7,1.1],["保安",56.6,3.9,15.3,1.7],["医生",56.4,25.4,13,17.6],["守望者",56.2,14.7,14,7.8],["狱卒",56.2,10.6,8.8,9.7],["预言家",56,23.9,14.3,11.3],["管道工",55.2,7.6,11.7,2.1],["换票师",55,16.5,8.8,15.1],["魔术师",54.8,9.2,12.3,8.2],["哪吒",54.3,20.7,3.5,19.1],["侦探",53.7,8.7,9.1,7],["情报员",53.5,6.5,14.7,3.4],["猎人",53.1,11.3,13.9,8.2],["船员",47.4,6.7,4.2,-163.6]],"invader":[["熊大熊二",31.1,3.8,-15,3.3],["摄魂怪",31,16.3,-14.9,12.8],["鬼新娘",30.2,5,-14.8,4.4],["双面人",30,34.6,-10.5,25.1],["小黑",29.6,1.3,-13.8,1.2],["教父",28.9,14.8,-18.7,12.2],["蛇精",28.4,0.9,-17.1,0.9],["赏金猎人",27,13.7,-17.4,11.5],["收割者",26.8,6.9,-21.3,6.3],["时间刺客",26.6,6.4,-15.6,4.6],["捣蛋鬼",26.2,2.9,-14.4,2.5],["闪光弹",26,2.3,-14.3,1.1],["暗之巨人",25.9,4.1,-15.3,3.2],["狙击手",25.7,8.8,-15.3,-17.4],["孙悟空",25.6,2.8,-11.8,0.4],["忍者",25.5,2.7,-19.7,0.5],["吸血鬼",25.5,9.8,-15.6,8.6],["欺诈师",25.3,5.7,-16.1,4.4],["女帝",25.2,4.6,-15.4,4.1],["女巫",24.1,5.7,-18.5,2.8],["咒术师",23.2,6.3,-13.1,2],["清洁工",23,9.7,-19.8,4.4],["伪人",22.8,3.4,-23.6,1.7],["守夜人",22.5,3.5,-14.1,2.4],["变色龙",22.5,7.5,-17.4,-33.6],["间谍",22.3,5.4,-17.9,2.3],["收债人",22,6.1,-13.8,5.4],["搬运工",21,2.2,-16.6,1.2],["内鬼",19.9,2.6,-18,-2.7]],"neutral":[["幸存者",72,37.1,2.5,34],["墙头草",60,12.6,-4.2,12],["小蜜蜂",54.9,29,1.9,24.8],["丘比特",49.8,17.4,-5,16.2],["怪盗",38.2,22.1,6.5,21.3],["神子",27.3,5,-6.6,4.7],["恶魔",25.3,4.9,-4.5,3.8],["无面人",20.2,12.1,-1,10.4],["幻影",20.1,11.6,10.9,10.2],["小丑",17.9,9,-1.5,4.6],["奶龙",17.4,4.1,-11.5,3.6],["怪兽",14.5,7.8,-3.1,-10.5],["焰火师",13.8,10.2,-13.6,5.4],["大胃王",12.6,13.9,-5.8,5.4],["饕餮",12.4,3.1,-0.6,1.9]]},"2026-04-21":{"astronaut":[["柯南",58.4,5.4,0,0],["灰原哀",57.7,0.5,0,0],["武士",55.4,2.3,0,0],["葫芦兄弟",55.3,9.2,0,0],["毛利兰",53.9,0.8,0,0],["时间之主",53.4,2.8,0,0],["勇者",53,1.4,0,0],["考古学家",53,0.7,0,0],["卧底",52.1,1,0,0],["诱饵",51.7,1.8,0,0],["狱卒",50.4,1.3,0,0],["哪吒",50,3.8,0,0],["法官",49.9,1.1,0,0],["逍遥",49.2,0.8,0,0],["警长",49.1,34.3,0,0],["国王",49,1.4,0,0],["魔术师",48.1,1.7,0,0],["单面人",47.3,8.8,0,0],["光之巨人",47.3,1.9,0,0],["船员",45.8,210.4,0,0],["老兵",45.7,9,0,0],["守卫",45.6,3.3,0,0],["换票师",45.4,2.1,0,0],["守望者",45.2,8.3,0,0],["保安",44.3,2.6,0,0],["医生",43.6,8.6,0,0],["情报员",43.4,4.1,0,0],["侦探",42.6,2.6,0,0],["预言家",39.9,14,0,0],["黑客",39.7,6.5,0,0],["猎人",39.5,3.9,0,0],["管道工",39,6,0,0],["工程师",38.2,6.6,0,0],["市长",34.6,2,0,0]],"invader":[["蛇精",56.9,0.2,0,0],["收割者",52.8,0.8,0,0],["熊大熊二",52.2,0.9,0,0],["教父",50.2,4.6,0,0],["鬼新娘",48.1,1.3,0,0],["忍者",47.4,2.2,0,0],["赏金猎人",47.1,3.1,0,0],["女帝",46.9,1.3,0,0],["女巫",46.5,5.6,0,0],["小黑",45.7,0.2,0,0],["摄魂怪",45.4,5.3,0,0],["欺诈师",44.9,1.9,0,0],["伪人",44.8,2.3,0,0],["清洁工",44.3,7.4,0,0],["暗之巨人",44,1,0,0],["吸血鬼",43.9,1.7,0,0],["双面人",43.6,13.6,0,0],["捣蛋鬼",43.5,0.5,0,0],["间谍",42.9,4.2,0,0],["时间刺客",42.5,2.5,0,0],["狙击手",41.8,24.2,0,0],["搬运工",41.6,1.3,0,0],["变色龙",40.8,35.8,0,0],["孙悟空",40.7,2.6,0,0],["闪光弹",39.9,1.3,0,0],["内鬼",38.1,5.2,0,0],["咒术师",38,5.2,0,0],["收债人",36.1,1,0,0],["守夜人",34.8,1.9,0,0]],"neutral":[["幸存者",74,5.6,0,0],["墙头草",60.4,1.5,0,0],["丘比特",54.1,2.8,0,0],["小蜜蜂",48.9,7.4,0,0],["恶魔",28,1.4,0,0],["神子",27.3,0.5,0,0],["怪盗",26.5,1.1,0,0],["奶龙",21.7,0.6,0,0],["焰火师",19.8,4.9,0,0],["大胃王",17.9,10.5,0,0],["无面人",17.9,2.1,0,0],["怪兽",17,15.3,0,0],["小丑",14.2,5.3,0,0],["饕餮",11.2,1.4,0,0],["幻影",4.3,2,0,0]]},"2026-04-22":{"astronaut":[["柯南",56.9,5.4,0,0],["武士",53.2,2.1,0,0],["时间之主",53.1,2.4,0,0],["毛利兰",52.9,0.7,0,0],["葫芦兄弟",52.8,8.4,0,0],["诱饵",52.1,1.7,0,0],["逍遥",52,0.6,0,0],["国王",51.9,1.5,0,0],["勇者",51.1,1.5,0,0],["卧底",50.8,0.9,0,0],["法官",50.4,1.3,0,0],["换票师",49,2.2,0,0],["哪吒",48.3,3.4,0,0],["警长",48.1,33.3,0,0],["考古学家",48.1,0.7,0,0],["单面人",48,9.2,0,0],["灰原哀",47.3,0.5,0,0],["光之巨人",47,1.9,0,0],["狱卒",46.6,1.1,0,0],["守望者",46.3,8.3,0,0],["船员",45.1,199.9,0,0],["老兵",43.3,7.9,0,0],["医生",43.1,8.9,0,0],["情报员",42.7,3.7,0,0],["侦探",41.7,2.5,0,0],["魔术师",41.5,1.5,0,0],["守卫",41.4,3,0,0],["猎人",40.5,3.7,0,0],["预言家",40.4,13.1,0,0],["管道工",40.3,5.9,0,0],["保安",40.3,2.5,0,0],["黑客",38.2,6,0,0],["工程师",37.3,6.1,0,0],["市长",37.3,1.8,0,0]],"invader":[["蛇精",60.6,0.1,0,0],["教父",52.4,4.6,0,0],["女帝",50.9,1.4,0,0],["收割者",50.8,0.7,0,0],["熊大熊二",50.2,0.7,0,0],["赏金猎人",48.2,3,0,0],["鬼新娘",48.1,1.2,0,0],["忍者",47.6,2.1,0,0],["小黑",47.3,0.3,0,0],["时间刺客",46.5,2.6,0,0],["摄魂怪",46.1,5.2,0,0],["吸血鬼",45.6,1.6,0,0],["伪人",44.4,2.4,0,0],["暗之巨人",44.3,1.1,0,0],["双面人",44.1,13.3,0,0],["欺诈师",43.4,1.5,0,0],["清洁工",42.6,6.8,0,0],["捣蛋鬼",42.6,0.5,0,0],["守夜人",42.4,1.7,0,0],["狙击手",41.9,24.4,0,0],["变色龙",41.8,36.2,0,0],["女巫",41.6,4.2,0,0],["收债人",40.9,1,0,0],["孙悟空",40.8,2.5,0,0],["闪光弹",40.6,1.5,0,0],["间谍",39.7,3.8,0,0],["咒术师",39.5,4.7,0,0],["内鬼",38.1,5.2,0,0],["搬运工",36.6,1.1,0,0]],"neutral":[["幸存者",72.4,5.5,0,0],["墙头草",63.6,1.3,0,0],["丘比特",51.4,2.3,0,0],["小蜜蜂",46.5,7,0,0],["神子",31.7,0.4,0,0],["怪盗",28.2,1.1,0,0],["奶龙",26.8,0.6,0,0],["恶魔",25.7,1.5,0,0],["饕餮",19.5,1.6,0,0],["无面人",19.1,2.5,0,0],["大胃王",17.8,9.3,0,0],["小丑",16.3,4.7,0,0],["幻影",15.9,2.3,0,0],["怪兽",15.5,16.2,0,0],["焰火师",14.8,4.3,0,0]]}},"特别行动单人排位":{"2026-04-10":{"astronaut":[["毛利兰",58.6,9,2.4,0.3],["灰原哀",57.8,8.1,1.6,-0.1],["葫芦兄弟",57.7,54.2,2.5,-17.4],["卧底",57.1,3.9,3.7,0],["柯南",57.1,35.9,0.1,0.6],["工程师",56.9,20.2,0.7,0.3],["光之巨人",56.1,33.3,1.7,0.4],["法官",56.1,14.6,1.7,1],["保安",56,4.4,3.7,0.3],["时间之主",56,18,0,0.9],["考古学家",56,6.8,1.3,0],["国王",55.9,8.5,2.3,0.3],["市长",55.7,6.9,1.1,-0.2],["诱饵",55.4,11.8,1.2,0.9],["警长",55.2,72.3,0.6,3.8],["逍遥",55,6.6,3.1,0.2],["武士",54.8,19.4,0.8,-0.3],["勇者",54.7,11.1,2,0.3],["老兵",54.5,25.4,1,0.5],["狱卒",54.1,10.5,1.6,0.5],["单面人",54,53.3,0.7,0.7],["预言家",53.7,24.7,1.1,1.7],["守卫",53.7,5.2,-0.3,-0.3],["守望者",53.2,15.1,-0.2,0.4],["换票师",52.6,17.1,0.8,1.5],["医生",52.5,27.4,0.5,0.2],["管道工",52.4,8.1,-0.7,0],["黑客",51.6,7.5,2.7,0.2],["魔术师",51.5,9.6,0.2,0.7],["哪吒",51.1,19.4,0.7,2.3],["侦探",50.5,8.5,0.5,0.4],["猎人",49.7,10.6,1.1,0.6],["船员",47.6,6.2,5.1,-1],["情报员",47.6,6.8,0,0.4]],"invader":[["蛇精",38.8,1.2,4.4,-0.3],["鬼新娘",34.8,4.9,-1,0.6],["熊大熊二",33.9,4.4,-4.6,-0.1],["双面人",33.4,38.3,-0.9,-1.2],["教父",33.4,15,-0.5,-0.8],["摄魂怪",33,17.2,-0.8,1],["捣蛋鬼",31.3,5.4,-3.1,0.7],["时间刺客",30,5.6,0,0.2],["闪光弹",29.6,2.3,-0.8,0.1],["女帝",29.6,3.3,-3.3,0.3],["赏金猎人",29.5,15,-1.1,-0.6],["收割者",29.5,7,-3.2,0.2],["搬运工",28.5,1.9,4.6,0.1],["忍者",28.4,2.6,-1.6,-0.2],["吸血鬼",27.8,9.8,-1.3,0.3],["孙悟空",27.6,2.9,-0.2,0],["暗之巨人",27.5,4,-1.7,-0.3],["伪人",27.4,3.6,0.8,0.5],["欺诈师",27.1,6.3,-3.2,-1.6],["间谍",26.3,5,0.3,0.6],["狙击手",26.3,7.8,-1,0.1],["小黑",25.2,1.2,-4.4,0.1],["女巫",24.8,5,-2.2,0.3],["清洁工",24.5,8.6,-2.6,0.4],["咒术师",24.4,4.7,-0.7,0.4],["内鬼",24,1.8,-0.3,-0.2],["变色龙",24,6.4,-3.8,0],["收债人",23.9,6.1,-0.2,-1],["守夜人",23.8,2.7,0.1,0.4]],"neutral":[["幸存者",70.5,34.6,0.6,-2.2],["墙头草",57,11.8,-0.2,-0.1],["小蜜蜂",52.1,22.4,-0.7,-0.2],["丘比特",46.3,19.3,-1.3,-1.1],["怪盗",31.8,21.7,-1.7,1.8],["神子",30.1,5.3,4.6,0],["恶魔",22.6,6,-2.2,-0.4],["焰火师",21.8,15.5,-0.6,5.9],["奶龙",17.3,4.8,0.7,0],["无面人",17,14.5,-0.9,-1.6],["小丑",16.1,9.9,0.6,0.1],["幻影",12.7,7.4,0.1,-0.1],["饕餮",11.6,3.3,0.9,-0.3],["怪兽",11.2,9.1,-1,-0.2],["大胃王",10.1,14.2,-0.9,-1.6]]},"2026-04-11":{"astronaut":[["灰原哀",57.2,7.2,2.1,-0.6],["毛利兰",57,8.2,0.3,0.2],["卧底",56.3,4.4,2.8,0.2],["柯南",56.3,34.9,0.1,-1.1],["工程师",56.2,20,0.6,-0.2],["时间之主",56.1,21.1,-0.2,-0.2],["逍遥",55.9,6,0.9,-0.1],["葫芦兄弟",55.7,55.6,1.3,-6.1],["光之巨人",54.6,33.4,0.7,0.5],["考古学家",54.4,6.1,-1.1,-0.1],["诱饵",54.1,11.6,0.4,0.1],["守卫",54,4.9,1.6,-0.3],["警长",53.9,72.2,0.1,1.9],["武士",53.8,19.4,0,-0.3],["国王",53.8,8.4,1.9,-0.3],["法官",53.6,13.9,1.2,-0.3],["保安",53.5,3.8,0.7,0.2],["市长",53.3,7,-0.7,-0.2],["勇者",53.3,11.5,-0.8,0.5],["狱卒",53.1,10.1,0.6,0],["老兵",52.5,26.5,-0.1,0.4],["单面人",52.5,55.3,0.2,2.1],["预言家",52.4,25.4,1,0.6],["守望者",51.4,15.1,-0.6,0.3],["魔术师",51,9.4,1.4,0.5],["换票师",50.8,16.8,1,0.8],["管道工",50.6,7,0.9,0],["医生",50.3,25.1,-0.4,-0.3],["黑客",50.2,6.4,1.4,-0.1],["哪吒",49.6,18.2,-0.6,1.2],["猎人",49.3,10.9,1.2,0.7],["侦探",49,9.1,-0.2,0.2],["情报员",47.4,7,0.6,0.4],["船员",43,8.2,2.2,-0.9]],"invader":[["蛇精",38.8,0.7,3.5,-0.2],["熊大熊二",35.7,3.9,0.5,-0.1],["教父",35.1,15.2,0.8,0],["摄魂怪",34.7,16.3,-0.4,0],["鬼新娘",34.5,4.5,1.6,0],["双面人",34.4,39.3,0.2,-0.5],["赏金猎人",32.1,15.8,0.6,-0.2],["收割者",31.3,6.9,-1.8,-0.1],["女帝",31.1,3.4,-2.3,0.2],["小黑",30.9,1.1,0.9,0],["欺诈师",30.7,6.1,0.7,-1.5],["时间刺客",30.2,6,1,0.6],["暗之巨人",29.1,4.1,0.3,-0.1],["伪人",28.8,3.3,-0.8,-0.1],["忍者",28.4,2.7,-0.9,0],["吸血鬼",27.9,10.3,-2.6,0.2],["狙击手",27.3,8.6,-0.7,0],["捣蛋鬼",26.9,3,-2.3,0],["清洁工",26.8,9.2,0.5,0.6],["间谍",26.8,4.9,0,0.6],["变色龙",26.7,7,-2,0.3],["女巫",26.1,5.1,-0.6,0.6],["咒术师",25.6,4.8,0,0.4],["闪光弹",24.8,2.2,-2.8,0.3],["收债人",24.7,6,0.3,-1.2],["搬运工",24.5,1.9,-2.2,-0.1],["内鬼",24.4,2.1,-1.6,-0.2],["孙悟空",23.9,2.8,0.5,0.2],["守夜人",22.2,2.6,-3,0.2]],"neutral":[["幸存者",70.6,36.5,0.2,-1.8],["墙头草",56.8,10.8,-1.3,-1.1],["小蜜蜂",51.8,23.2,0.6,0.6],["丘比特",45.5,18.7,-0.6,-1.8],["怪盗",31.1,20.2,-1.1,1.1],["神子",27.1,5.3,-0.3,0.4],["恶魔",26.5,5.9,0.2,-0.2],["奶龙",21.1,5.6,-1.4,-0.2],["焰火师",19.9,14.1,-1.7,4.9],["无面人",17.7,14.4,0,-1],["小丑",14.6,9.7,-1.3,-0.4],["饕餮",12.9,3.8,0.2,0.2],["怪兽",12.8,9,-0.9,-0.5],["幻影",12.5,7.3,-0.1,0],["大胃王",11.7,14.9,-0.6,-0.2]]},"2026-04-12":{"astronaut":[["毛利兰",56.8,7.9,1.2,-0.3],["柯南",55.7,34.2,-0.4,-0.9],["工程师",55.5,24.2,0.3,-0.6],["灰原哀",55,7.1,-0.2,-0.8],["考古学家",54.2,5.9,-0.2,0.2],["逍遥",54.2,5.7,-0.2,-0.1],["葫芦兄弟",54,57.9,-0.5,2.9],["卧底",53.9,4.7,-2,0.3],["武士",53.8,18,0.8,0],["光之巨人",53.3,33,-0.3,0.8],["时间之主",53.2,15.1,-0.5,-0.2],["法官",52.9,13.4,-0.9,-1.1],["诱饵",52.6,11.6,-0.6,0.3],["警长",52.5,71,-0.6,0.4],["市长",52.2,7.2,-0.6,0],["勇者",52.2,11.3,-0.1,0.4],["国王",52,8.5,-0.2,0],["守卫",51.5,4.7,-0.6,-0.8],["单面人",51.3,53.6,-0.4,0.5],["管道工",51.2,10.9,-2.5,-0.7],["狱卒",50.9,10.4,-0.5,0.3],["老兵",50.5,25.1,-0.4,-1.4],["保安",50.5,3.6,-2.3,-0.1],["预言家",50.4,25.9,0.2,-0.3],["守望者",50.2,14.4,0.3,0],["医生",49.7,27.5,0.3,-1],["换票师",49.5,17,-1.1,0.6],["黑客",48.6,6.5,2.3,0.1],["魔术师",48.6,9.2,0.7,0.3],["哪吒",48.4,18.3,-0.7,0.9],["猎人",47.8,10.5,-0.4,0.1],["侦探",47.1,9.5,-0.7,0.1],["情报员",45.6,7.6,-1.8,1],["船员",41.5,9.1,2.3,-1]],"invader":[["蛇精",40.1,0.7,8.2,-0.1],["教父",33.9,15.5,0.1,0],["双面人",33.7,38.6,-0.1,-0.5],["熊大熊二",33.6,3.9,-0.5,0],["摄魂怪",33.4,16.2,-1.1,0.2],["鬼新娘",31.7,4.3,1.1,-0.1],["收割者",31.4,6.7,-1.3,-0.1],["小黑",31.3,1.4,2,0.2],["暗之巨人",29.7,4.1,1.6,0.3],["时间刺客",29.2,6.1,1.2,0.8],["赏金猎人",28.8,13.6,-0.4,0],["女帝",28.8,3.5,-1.2,0.4],["吸血鬼",28.7,9.4,-0.6,0.1],["搬运工",28.5,1.9,0.7,0],["忍者",28.5,2.9,0.2,0],["欺诈师",28.3,5.9,-1.2,-1.6],["伪人",28,3.3,0.4,0],["狙击手",27.7,9.3,1.8,0],["间谍",27.4,5.2,1.2,0.3],["孙悟空",27,2.7,1.1,-0.2],["捣蛋鬼",27,3.4,-3,0.3],["清洁工",26.5,9.5,-0.3,0.7],["变色龙",26.2,7.1,-2.3,-0.4],["女巫",25.9,5.7,-1.5,0.4],["闪光弹",25.6,2.5,-2.6,0.2],["守夜人",25.5,2.6,-0.1,0.1],["咒术师",25.3,5.4,0.3,0.2],["收债人",23.7,6,-0.4,-1.1],["内鬼",21.9,2.5,-3,-0.1]],"neutral":[["幸存者",66.7,33,0.4,-1.4],["墙头草",56.7,11.2,-0.6,0.7],["小蜜蜂",51.9,22.5,-0.7,-1.9],["丘比特",46.7,18,-0.3,-1.6],["怪盗",32.8,20,-0.8,0.9],["焰火师",26.4,16.2,-1.5,4.4],["神子",25.1,4.9,1.3,0],["恶魔",24.2,6,-1.5,-0.1],["奶龙",18.5,4.6,-2.4,-0.2],["怪兽",18.2,12.3,0.7,-0.1],["无面人",17.5,13.9,0.1,-0.4],["小丑",14.3,9.9,-0.4,-0.5],["幻影",12.7,8.4,0.1,0],["大胃王",12.7,15.2,0.1,0],["饕餮",12.1,3.5,-0.6,0.2]]},"2026-04-13":{"astronaut":[["毛利兰",61.6,9.8,2.5,1.5],["时间之主",60.5,21.5,3.3,2.6],["卧底",60.3,4,6,-0.1],["柯南",59.4,35.1,1.6,0.8],["灰原哀",58.7,8.8,3.2,1.1],["守卫",58.5,4.5,5.1,-0.7],["葫芦兄弟",58.3,61.5,1.9,5.6],["考古学家",58.2,7.4,3.7,1.3],["光之巨人",57.9,31.5,3.3,-0.8],["诱饵",57.2,12.5,2.9,1.7],["工程师",57.1,19.9,3.4,-0.2],["武士",56.7,18,1.8,0],["保安",56.6,4.1,4,0.2],["国王",56.6,9.4,2.9,0.5],["老兵",56.4,24.8,4.2,-2.1],["勇者",56.4,10.6,2.8,-1.3],["守望者",56.3,15.6,3.7,0.3],["法官",56.2,14.4,2.2,0.9],["警长",56,67.9,2.1,-2.6],["单面人",55.6,51,2.5,-2.6],["市长",55.4,7.2,0.5,-0.3],["狱卒",55.1,10.3,2.3,-0.2],["医生",54.5,25.6,3,-2],["黑客",54.4,6.8,5,-0.9],["逍遥",54.4,5.9,0.2,0.3],["预言家",53.8,23.7,2.6,-2.1],["管道工",53.8,8,3.7,-0.2],["侦探",53.7,8.6,5.4,-1.1],["换票师",53.1,17.2,2.4,0.5],["哪吒",53,20.3,2,2.1],["情报员",52.5,6.9,4.8,-0.2],["猎人",51.2,11.8,1.5,1],["魔术师",50.3,9.1,-0.3,-0.2],["船员",45.7,6.5,3.4,-3.1]],"invader":[["鬼新娘",33.5,5.2,1.7,0.9],["熊大熊二",33,4.2,1.9,0.5],["摄魂怪",31.5,15.9,-1.4,0.2],["双面人",31.3,35,-1.7,-3.1],["收割者",30.5,6.9,0.9,0.2],["忍者",30,3,1.1,0],["蛇精",29.4,1.2,-3.4,0.4],["赏金猎人",29,15,-0.7,0.2],["伪人",28.7,3.8,-0.3,0.5],["搬运工",28.1,2.1,0.1,-0.1],["欺诈师",28,5.9,-0.4,-1.3],["女帝",27.9,5.4,-1.6,1],["教父",27.9,15.1,-3.3,0.5],["时间刺客",27.6,6.1,-1.5,0.4],["吸血鬼",27.3,10.2,-0.4,0.3],["清洁工",26.5,9,0.2,0.1],["暗之巨人",25.6,3.8,-4.2,-0.3],["间谍",24.7,5.7,-1.7,0.8],["女巫",24.6,6,-0.7,0.6],["小黑",24.1,1.5,-4.9,0.3],["狙击手",23.6,8.1,-4.1,-1.6],["捣蛋鬼",23.6,2.5,-2.3,-0.1],["变色龙",22.5,6.9,-5.2,-0.5],["收债人",21.1,5.8,-2.6,-0.6],["闪光弹",20.8,2.4,-6.7,0.3],["咒术师",20.7,5,-2.4,0.4],["孙悟空",20.7,2.7,-3,0],["守夜人",19.2,3.1,-5.5,0.2],["内鬼",18.6,2.5,-4.9,-0.2]],"neutral":[["幸存者",70.7,34.6,0.2,-1.3],["墙头草",56.1,12.5,-1.5,2.1],["小蜜蜂",52.4,25.1,0,1.6],["丘比特",48.8,18.2,1.8,0.6],["怪盗",37.1,22.9,0.9,2.3],["神子",29,5.3,0.6,-0.4],["恶魔",24.6,6.1,-1.5,0],["幻影",20.4,12.1,0.6,-0.7],["无面人",19.3,12.1,0.2,-1.4],["小丑",16.9,9.5,1.7,-0.4],["奶龙",16.5,4,-0.7,-0.4],["焰火师",15.5,10.3,-2.3,2.1],["怪兽",14.9,8.9,1.3,-1],["大胃王",13.7,15.1,-1.3,-2.3],["饕餮",11.7,3.2,-2.7,-0.4]]},"2026-04-14":{"astronaut":[["毛利兰",62.5,10.7,2.4,0.6],["时间之主",59.3,22,-0.5,1.1],["灰原哀",59.1,9.3,1,0.2],["柯南",58.5,33.5,1,-2],["葫芦兄弟",58.1,58,0.1,2.9],["光之巨人",57.1,31.6,1,-0.5],["逍遥",57.1,9.6,1,-0.3],["警长",56.9,74.2,0.8,-1.3],["诱饵",56.9,11.1,1.3,0.3],["勇者",56.8,10.6,1.7,-0.1],["老兵",56.6,29.8,0,0.5],["武士",56.6,20.2,0.3,0],["市长",56.5,6.8,0.2,0.3],["卧底",56.1,4,-2,0.1],["法官",56,13.4,0.5,-0.8],["单面人",55.6,49.1,1.1,-0.2],["守望者",55.5,15.8,0.2,-0.4],["考古学家",55.4,6.8,-0.3,0.2],["狱卒",55.2,10.2,1.1,-0.1],["保安",55,4.3,-0.8,0.6],["国王",55,9.4,-1.1,-0.6],["黑客",54.5,6.6,-0.7,-0.1],["情报员",54.4,9.3,1.7,0.2],["医生",54.2,26.7,0.6,-0.5],["守卫",54.2,4.9,-2.7,-0.1],["预言家",54.1,23.4,1.2,-0.6],["换票师",53.5,16.4,1.6,0.8],["哪吒",53.4,20.9,-0.5,0.4],["魔术师",53.1,9,1.9,-0.2],["工程师",52.7,12.7,0.9,0.6],["猎人",52.1,10.6,0.7,0.2],["侦探",51.2,7.9,-1.1,-0.5],["管道工",51.2,5.5,-0.8,-0.2],["船员",45.7,5.8,-1.4,-0.6]],"invader":[["蛇精",36.4,0.9,-3.4,-0.2],["女帝",34.3,9.7,-0.2,0.9],["熊大熊二",34.1,3.9,0.4,0],["教父",34,15.1,0.7,0.1],["鬼新娘",34,4.7,-0.8,-0.4],["双面人",33.4,34.3,-0.1,-0.6],["摄魂怪",32.6,16.7,-0.9,0.6],["时间刺客",30.6,6.2,1.2,0.1],["收割者",30,6.8,-2.2,0.1],["赏金猎人",29.9,14,-0.4,0.1],["欺诈师",29.2,5.9,-0.1,-0.5],["暗之巨人",29,3.7,-2.8,0],["女巫",28.9,8.9,-1.1,0.1],["伪人",28.8,3.3,1.5,0],["搬运工",28.6,1.8,0.2,-0.5],["小黑",28.3,1.4,0.8,0.2],["吸血鬼",27.9,10,-0.8,0.5],["清洁工",27.4,9,0.1,0.3],["闪光弹",26.8,1.7,1.5,-0.2],["捣蛋鬼",26.7,2.3,-3.2,-0.2],["狙击手",26,7.8,-0.4,-0.4],["孙悟空",25.7,2.3,0.9,-0.2],["间谍",25.5,4.8,-2.3,-0.4],["忍者",24.9,3,-3.9,0.5],["守夜人",24.2,2.6,-3,0.2],["变色龙",24,6.6,-1.7,0.1],["咒术师",22.8,4.6,-3.4,0.2],["内鬼",21.5,2.4,-0.5,0.1],["收债人",21.5,5.3,-1.9,-0.7]],"neutral":[["幸存者",69.4,35.8,-1.2,1.9],["墙头草",57.2,12.7,0.5,0.3],["小蜜蜂",48,24.6,-0.3,-0.3],["丘比特",44.9,18.4,-0.1,-2.3],["怪盗",35,22.7,2.5,-1.1],["神子",28,5.1,-0.4,-0.5],["恶魔",25.4,5.9,1.4,0],["无面人",18.3,12.4,2.1,0.3],["焰火师",18,10.6,-0.3,3.4],["小丑",14.7,9.2,1.4,0.3],["怪兽",13.2,9.4,-1.4,0],["饕餮",13,3.2,1,0.1],["大胃王",12.8,15.3,-1.7,-1.1],["奶龙",11.7,3.5,-1.5,-0.3],["幻影",8.8,11.2,-1,-0.3]]},"2026-04-15":{"astronaut":[["毛利兰",53.8,10.1,0.3,-0.5],["灰原哀",53.8,8.9,0.6,-0.7],["时间之主",53.5,19.5,0.2,0.1],["逍遥",53.3,7.4,2.6,-0.8],["国王",52.9,9.5,1.9,-0.4],["柯南",52.9,35.9,0.6,-0.8],["考古学家",52.9,6.9,2.2,-0.9],["葫芦兄弟",52.8,58.5,-0.6,4.7],["警长",52.4,71.3,1.1,-0.4],["光之巨人",52.4,31.8,0.5,-1],["卧底",52.2,4.1,-0.9,-0.1],["诱饵",51.5,12.3,0.4,-0.1],["市长",51.3,7.1,0,0.3],["老兵",51.3,27.6,0.4,0.3],["武士",51.2,18.9,-0.6,-0.5],["医生",51.1,27.1,1.2,-1.2],["单面人",51,51.8,1.2,0.6],["勇者",51,11.4,1.3,0.3],["守望者",50.8,15.9,0.7,-0.2],["法官",50.2,15,1.2,-0.8],["预言家",50.1,21.7,2.3,0.1],["保安",49.3,3.4,-4.1,0],["哪吒",49.2,21.2,0,-0.1],["守卫",49.1,4.7,-0.6,-0.3],["猎人",49.1,12.2,1.4,0.8],["狱卒",49,10.1,0.8,0.1],["换票师",48.8,17.4,0.7,0.8],["魔术师",48.3,9.5,1,0.2],["工程师",48.1,14.2,1.2,1],["黑客",48,6.5,0.3,-0.2],["管道工",47.5,6.3,-1.4,-0.5],["侦探",47.1,8.5,1.6,0.1],["情报员",46.8,7.4,-1.6,0.5],["船员",43.5,5.9,-0.6,-0.5]],"invader":[["鬼新娘",38.6,5.3,-0.1,0.1],["教父",37,15.9,-0.3,0.6],["女帝",35.8,5.9,0.6,0.6],["收割者",35.7,6.5,3,-0.7],["熊大熊二",35.5,3.8,1.4,0.3],["双面人",35.4,35.6,-0.7,-0.1],["赏金猎人",35.4,16.6,0.8,-0.5],["摄魂怪",34.7,15.7,-1.8,0.1],["时间刺客",33.8,6.1,1.9,0.5],["小黑",33,1.1,3.7,-0.1],["蛇精",33,1.1,-2.3,0],["孙悟空",30.9,2.8,-0.5,-0.7],["伪人",30.7,3.3,1.4,-0.3],["吸血鬼",30.6,9.6,-1.7,-0.2],["欺诈师",30.5,6,-2.5,-0.6],["暗之巨人",30.1,4,-2.5,0.4],["清洁工",29.5,8.7,1.5,0.2],["狙击手",29.2,8.1,-0.2,-0.5],["搬运工",28.9,1.9,-0.5,-0.2],["女巫",28.7,7.8,0.8,0.6],["间谍",28.4,5,1.5,0.1],["守夜人",28.4,3,0.7,0.2],["闪光弹",28,1.9,-0.1,0.1],["变色龙",27.8,7.2,-2.5,0.4],["忍者",27.6,2.7,-4.3,0.1],["捣蛋鬼",26.9,2.8,-3.6,-0.3],["咒术师",25.4,4.9,0.7,0.4],["收债人",24.6,4.8,-1.5,-0.4],["内鬼",21.4,2.1,-3.9,0]],"neutral":[["幸存者",69.1,34.6,0.4,0.8],["墙头草",53.2,11.6,-0.8,-1],["小蜜蜂",46.8,24.2,0.7,0.8],["丘比特",42,18.4,-0.3,-1.2],["怪盗",30.1,20.1,0.8,-1.8],["神子",25.6,5.2,-0.6,-0.5],["幻影",23.4,17.3,-1.2,0.1],["恶魔",23.1,5.6,-1.4,0.1],["无面人",17.3,13,0.4,0.2],["焰火师",15.2,8.5,1.1,2.7],["小丑",14.8,9.6,1,-0.3],["饕餮",13.8,3.9,-4.6,0],["怪兽",12.8,8.2,-0.7,0.2],["大胃王",12.5,16.2,-0.6,0.5],["奶龙",9.7,3.4,0,-0.4]]},"2026-04-16":{"astronaut":[["柯南",55.6,36.8,0.7,0.1],["灰原哀",55.4,8.6,-0.2,-0.7],["诱饵",55.3,12.1,1.6,-1.3],["毛利兰",55.3,9.6,-2.1,-0.6],["时间之主",55,20.8,-0.5,-0.3],["工程师",54.6,19.2,-0.8,-0.2],["考古学家",54.3,6.2,-0.6,-1.2],["葫芦兄弟",54.3,58.3,-0.6,3.1],["武士",53.1,19,-0.3,0.7],["警长",53,72.3,-0.1,0.4],["市长",52.8,7,-2.6,-0.1],["卧底",52.8,3.9,0.1,0.1],["国王",52.7,9.4,1.6,0.4],["勇者",52.7,11.1,-2.5,0.3],["光之巨人",52.5,31.9,0.5,-0.8],["老兵",52.3,28.2,1.2,1.3],["守望者",52,16.3,0.2,0.7],["法官",51.9,14.1,0.3,-1.4],["单面人",51.7,51.8,0,0.9],["魔术师",51.7,9,4.6,-0.1],["医生",51.6,25,-0.4,-1.1],["黑客",51.1,6.5,-1.5,-0.1],["逍遥",51.1,6,-0.3,0],["狱卒",51,9.8,0.3,0.1],["侦探",50.4,8.3,1.8,0.5],["守卫",50.1,4.4,-2.6,-0.2],["哪吒",50.1,20.3,0.7,-0.6],["预言家",49.8,21.6,0.9,0.2],["猎人",49.8,11.3,0.4,-0.9],["保安",49.6,3.5,-3.3,-0.3],["管道工",49.3,6.7,0.6,-0.1],["换票师",49.1,16.8,-1,-0.5],["情报员",48.1,7.7,0.7,0.9],["船员",45.8,6.5,0.1,0.7]],"invader":[["熊大熊二",38,3.8,2.3,-0.2],["摄魂怪",37.1,16.6,1.4,-0.4],["鬼新娘",37,5.2,-2,0.1],["双面人",35.9,36,0.5,0.4],["女帝",35.3,5.8,0.6,0.2],["教父",34.8,15.5,-0.3,-0.2],["蛇精",34.8,0.9,1.5,0.1],["时间刺客",34.1,6.3,0.3,0.2],["赏金猎人",33.4,16.1,0.1,0.2],["收割者",31.9,7.1,-0.8,-0.2],["孙悟空",31.6,2.7,4.7,-0.3],["暗之巨人",30.8,4.1,-0.2,-0.3],["捣蛋鬼",30.7,2.8,1.7,-0.2],["搬运工",30.6,1.9,4.4,0.1],["吸血鬼",30.6,9.9,-1.8,-0.2],["闪光弹",30.1,1.8,1.2,0.1],["伪人",29.4,2.9,-0.7,-0.8],["清洁工",29,9.1,0.4,0.3],["间谍",28.4,5.5,-1.1,0.2],["欺诈师",28,5.6,-2.8,-0.8],["变色龙",27.8,7.2,0.5,0.7],["小黑",27.8,1.2,-3.9,0],["守夜人",27.6,3,2.4,0.4],["忍者",27.3,2.6,-1.4,0.1],["咒术师",27.2,5.1,3.9,0.3],["狙击手",26.5,8.2,-2.5,1.2],["女巫",26.1,5.9,-3.5,-0.3],["收债人",23.8,5.1,1.8,-0.5],["内鬼",20.8,2.1,-7.8,-0.2]],"neutral":[["幸存者",71.6,36.3,-0.5,-0.1],["墙头草",54.7,12.2,-0.9,-0.8],["小蜜蜂",48.9,23.5,-0.3,-0.3],["丘比特",45.9,17.1,1.1,-1.7],["怪盗",30.7,20.4,0.8,-1],["神子",28.5,5.9,-2.5,-0.3],["恶魔",24.8,6,1.5,0.2],["奶龙",20.7,5.4,1.7,0],["小丑",16.2,9.7,0.6,0.1],["饕餮",15.2,3.9,-0.3,0.2],["焰火师",14.9,9.6,0.7,3.2],["无面人",14.8,12.9,-2,-0.6],["怪兽",14.2,8.5,-1.8,0],["幻影",13.3,11.1,-1.1,-0.3],["大胃王",13.2,17.3,-1.8,1.2]]},"2026-04-17":{"astronaut":[["毛利兰",59.6,8.4,1,-0.6],["工程师",59.4,20.6,2.5,0.4],["柯南",59.4,34.6,2.3,-1.3],["卧底",58.8,4.3,1.7,0.4],["考古学家",58.6,6.2,2.6,-0.6],["葫芦兄弟",58.6,52.9,0.9,-1.3],["法官",58,14.4,1.9,-0.2],["灰原哀",57.9,7.9,0.1,-0.2],["时间之主",57.7,20,1.7,2],["逍遥",57.5,7.3,2.5,0.7],["市长",57.3,7.6,1.6,0.7],["诱饵",57.3,11.3,1.9,-0.5],["保安",57,4.3,1,-0.1],["警长",56.9,76.4,1.7,4.1],["武士",56.8,21.2,2,1.8],["光之巨人",56.6,33.8,0.5,0.5],["守卫",56.4,5.1,2.7,-0.1],["国王",56.4,8.6,0.5,0.1],["勇者",56.3,10.5,1.6,-0.6],["守望者",56,15.2,2.8,0.1],["狱卒",55.7,10.4,1.6,-0.1],["老兵",55.6,25.9,1.1,0.5],["单面人",55.3,54.2,1.3,0.9],["管道工",55.1,8.2,2.7,0.1],["预言家",55,22.5,1.3,-2.2],["换票师",54.5,15.9,1.9,-1.2],["医生",54.4,26.7,1.9,-0.7],["魔术师",54.4,9.2,2.9,-0.4],["黑客",53.7,6.7,2.1,-0.8],["猎人",52.9,10.4,3.2,-0.2],["侦探",52.4,8.4,1.9,-0.1],["哪吒",52,18,0.9,-1.4],["情报员",50.5,7,2.9,0.2],["船员",46.9,6.2,-0.7,0]],"invader":[["熊大熊二",34.6,4.4,0.7,0],["鬼新娘",32.3,4.7,-2.5,-0.2],["教父",32.1,15.4,-1.3,0.4],["摄魂怪",31.9,16.9,-1.1,-0.3],["双面人",31.7,38.3,-1.7,0],["蛇精",31.3,0.7,-7.5,-0.5],["捣蛋鬼",30.2,5.6,-1.1,0.2],["收割者",29.6,6.9,0.1,-0.1],["赏金猎人",28.6,15,-0.9,0],["小黑",28.6,1.2,3.4,0],["时间刺客",28.5,5.8,-1.5,0.2],["欺诈师",28.1,5.6,1,-0.7],["孙悟空",26.8,3.2,-0.8,0.3],["吸血鬼",26.7,10,-1.1,0.2],["暗之巨人",26.7,4.2,-0.8,0.2],["女帝",26.5,3.4,-3.1,0.1],["间谍",26.4,4.8,0.1,-0.2],["忍者",26.4,3,-2,0.4],["伪人",26.3,3,-1.1,-0.6],["狙击手",25.8,7.7,-0.5,-0.1],["变色龙",25.6,6.8,1.6,0.4],["女巫",25.5,4.8,0.7,-0.2],["搬运工",25.2,1.9,-3.3,0],["闪光弹",25.1,2.2,-4.5,-0.1],["守夜人",25,2.3,1.2,-0.4],["清洁工",24.6,8.1,0.1,-0.5],["收债人",23,6.4,-0.9,0.3],["咒术师",21.9,5.6,-2.5,0.9],["内鬼",21.2,2,-2.8,0.2]],"neutral":[["幸存者",70.9,34.9,0.4,0.3],["墙头草",59.5,11.9,2.5,0.1],["小蜜蜂",51.8,25,-0.3,2.6],["丘比特",45.9,17.9,-0.4,-1.4],["怪盗",33.7,20.4,1.9,-1.3],["神子",27.4,4.4,-2.7,-0.9],["恶魔",25.1,5.3,2.5,-0.7],["焰火师",17.4,24.1,-4.4,8.6],["无面人",16.3,13.5,-0.7,-1],["奶龙",16.1,4.1,-1.2,-0.7],["小丑",15.3,8.1,-0.8,-1.8],["怪兽",12.4,8.7,1.2,-0.4],["幻影",11.6,5.8,-1.1,-1.6],["饕餮",10.1,2.9,-1.5,-0.4],["大胃王",9.9,12.7,-0.2,-1.5]]},"2026-04-18":{"astronaut":[["毛利兰",59.2,7.8,2.2,-0.4],["时间之主",58,22.3,1.9,1.2],["工程师",57.9,20.1,1.7,0.1],["葫芦兄弟",57.9,52.3,2.2,-3.3],["柯南",57.4,35.2,1.1,0.3],["逍遥",57,7.2,1.1,1.2],["灰原哀",56.8,7.5,-0.4,0.3],["卧底",56,4.9,-0.3,0.5],["考古学家",55.9,5.9,1.5,-0.2],["警长",55.7,76.3,1.8,4.1],["诱饵",55.7,11.2,1.6,-0.4],["武士",55.7,20.9,1.9,1.5],["市长",55.6,7.7,2.3,0.7],["保安",55.3,3.6,1.8,-0.2],["光之巨人",55.3,32.8,0.7,-0.6],["法官",55.1,13.4,1.5,-0.5],["勇者",54.7,11.1,1.4,-0.4],["老兵",54.5,26.5,2,0],["守卫",54.3,5.1,0.3,0.2],["狱卒",54.2,10.2,1.1,0.1],["国王",54.1,8,0.3,-0.4],["守望者",54,15,2.6,-0.1],["单面人",54,55.4,1.5,0.1],["预言家",53.6,23.7,1.2,-1.7],["管道工",52.5,7,1.9,0],["魔术师",52.5,9.3,1.5,-0.1],["医生",52.3,24.4,2,-0.7],["换票师",52.2,16.6,1.4,-0.2],["哪吒",52.1,17.9,2.5,-0.3],["侦探",51.7,9.1,2.7,0],["黑客",51.5,6.3,1.3,-0.1],["猎人",50.4,10.9,1.1,0],["情报员",49.9,6.5,2.5,-0.5],["船员",44.3,8.4,1.3,0.2]],"invader":[["蛇精",35,0.8,-3.8,0.1],["教父",33.8,15.2,-1.3,0],["双面人",33.7,39.1,-0.7,-0.2],["摄魂怪",33.2,16.6,-1.5,0.3],["熊大熊二",33,4.2,-2.7,0.3],["鬼新娘",32.9,4.2,-1.6,-0.3],["收割者",31.8,7.2,0.5,0.3],["女帝",30.6,3.3,-0.5,-0.1],["赏金猎人",30.2,15.4,-1.9,-0.4],["时间刺客",29.9,5.8,-0.3,-0.2],["暗之巨人",29.2,4.4,0.1,0.3],["小黑",29.1,1.3,-1.8,0.2],["吸血鬼",28.7,10.4,0.8,0.1],["欺诈师",28,5.3,-2.7,-0.8],["捣蛋鬼",27.8,3.1,0.9,0.1],["伪人",27.6,3.1,-1.2,-0.2],["搬运工",27.4,2.1,2.9,0.2],["忍者",27.4,3,-1,0.3],["间谍",26.9,4.7,0.1,-0.2],["狙击手",26.6,8.5,-0.7,-0.1],["清洁工",26.1,8.9,-0.7,-0.3],["闪光弹",26,2.2,1.2,0],["咒术师",25.3,5.6,-0.3,0.8],["变色龙",25.1,7.1,-1.6,0.1],["女巫",24.6,4.7,-1.5,-0.4],["守夜人",24.2,2.6,2,0],["孙悟空",23.9,2.6,0,-0.2],["收债人",23.3,6.5,-1.4,0.5],["内鬼",23.2,2.1,-1.2,0]],"neutral":[["幸存者",71.4,38.5,0.8,2],["墙头草",59.4,11.6,2.6,0.8],["小蜜蜂",52.5,26.1,0.7,2.9],["丘比特",45.7,17.1,0.2,-1.6],["怪盗",31.6,19.8,0.5,-0.4],["恶魔",25.2,5.6,-1.3,-0.3],["神子",25.1,4.7,-2,-0.6],["奶龙",22.2,5.3,1.1,-0.3],["焰火师",18.6,17.3,-1.3,3.2],["无面人",17.2,13.3,-0.5,-1.1],["小丑",14.6,8.6,0,-1.1],["怪兽",13.5,8.3,0.7,-0.7],["饕餮",11.9,3.2,-1,-0.6],["大胃王",11.8,13.3,0.1,-1.6],["幻影",11.7,6.9,-0.8,-0.4]]},"2026-04-19":{"astronaut":[["毛利兰",59.3,7.8,2.5,-0.1],["工程师",59.1,25.9,3.6,1.7],["卧底",58.1,5.1,4.2,0.4],["葫芦兄弟",58,50.7,4,-7.2],["灰原哀",57.9,7.1,2.9,0],["柯南",57.6,35.6,1.9,1.4],["武士",56.4,18.9,2.6,0.9],["市长",56.2,7.9,4,0.7],["法官",56.2,13.7,3.3,0.3],["管道工",56,11.3,4.8,0.4],["时间之主",55.9,16,2.7,0.9],["考古学家",55.9,6.2,1.7,0.3],["警长",55.6,73.9,3.1,2.9],["光之巨人",55.6,33.5,2.3,0.5],["逍遥",55.4,6.4,1.2,0.7],["国王",55.1,8.6,3.1,0.1],["保安",55,3.8,4.5,0.2],["勇者",54.6,10.8,2.4,-0.5],["诱饵",54.4,11.5,1.8,-0.1],["狱卒",54.3,10.1,3.4,-0.3],["单面人",54.1,54.9,2.8,1.3],["守卫",53.7,5.1,2.2,0.4],["老兵",53.3,25,2.8,-0.1],["预言家",52.7,24.6,2.3,-1.3],["医生",52,26.4,2.3,-1.1],["猎人",51.8,10.8,4,0.3],["换票师",51.5,16.4,2,-0.6],["守望者",51.5,14,1.3,-0.4],["哪吒",50.9,17.9,2.5,-0.4],["魔术师",50.3,8.9,1.7,-0.3],["黑客",49.9,6.3,1.3,-0.2],["侦探",49.6,9.5,2.5,0],["情报员",48.4,7,2.8,-0.6],["船员",41.9,8.8,0.4,-0.3]],"invader":[["蛇精",34.9,0.7,-5.2,0],["熊大熊二",33.5,4.3,-0.1,0.4],["摄魂怪",32.6,16,-0.8,-0.2],["教父",32.5,15,-1.4,-0.5],["双面人",32.2,39.1,-1.5,0.5],["收割者",31.3,7.3,-0.1,0.6],["鬼新娘",30.3,4.4,-1.4,0.1],["吸血鬼",28.3,10.1,-0.4,0.7],["女帝",28.2,3,-0.6,-0.5],["赏金猎人",28.1,12.7,-0.7,-0.9],["小黑",27.9,1.4,-3.4,0],["捣蛋鬼",27.8,3.5,0.8,0.1],["搬运工",27.4,2,-1.1,0.1],["伪人",26.9,3.1,-1.1,-0.2],["时间刺客",26.8,6.1,-2.4,0],["欺诈师",26.5,5.9,-1.8,0],["暗之巨人",26.1,4.1,-3.6,0],["忍者",25.4,2.9,-3.1,0],["闪光弹",25.3,2.6,-0.3,0.1],["狙击手",25.3,8.6,-2.4,-0.7],["女巫",25.2,5.3,-0.7,-0.4],["清洁工",25,9.2,-1.5,-0.3],["变色龙",24.3,7.1,-1.9,0],["间谍",24.1,5.1,-3.3,-0.1],["收债人",23.7,6.9,0,0.9],["守夜人",23.6,2.5,-1.9,-0.1],["孙悟空",22.5,2.9,-4.5,0.2],["咒术师",22.4,6.2,-2.9,0.8],["内鬼",20.7,2.3,-1.2,-0.2]],"neutral":[["幸存者",68.6,36.1,1.9,3.1],["墙头草",59.5,11.7,2.8,0.5],["小蜜蜂",54.5,26.7,2.6,4.2],["丘比特",46.3,16.2,-0.4,-1.8],["怪盗",34.5,20.8,1.7,0.8],["恶魔",26.5,5.4,2.3,-0.6],["神子",25.2,4.6,0.1,-0.3],["焰火师",24.3,16.3,-2.1,0.1],["奶龙",20.1,4.5,1.6,-0.1],["无面人",17.7,13.4,0.2,-0.5],["怪兽",17.5,10.8,-0.7,-1.5],["小丑",15,9.2,0.7,-0.7],["大胃王",12.2,13.5,-0.5,-1.7],["幻影",11.9,7.4,-0.8,-1],["饕餮",11.1,3,-1,-0.5]]},"2026-04-20":{"astronaut":[["柯南",64.4,4.4,6.8,-31.2],["时间之主",61.1,3.1,5.2,-12.9],["葫芦兄弟",60.4,7.5,2.4,-43.2],["考古学家",58.4,0.5,2.5,-5.7],["哪吒",56.8,3,5.9,-14.9],["武士",56.7,1.8,0.3,-17.1],["灰原哀",56.7,0.3,-1.2,-6.8],["诱饵",56.6,1.3,2.2,-10.2],["毛利兰",56.6,0.6,-2.7,-7.2],["卧底",56.5,0.9,-1.6,-4.2],["法官",56.3,1,0.1,-12.7],["勇者",55.6,1.4,1,-9.4],["逍遥",53.9,0.5,-1.5,-5.9],["国王",53.7,1.1,-1.4,-7.5],["换票师",53,1.9,1.5,-14.5],["警长",50.9,30.4,-4.7,-43.5],["单面人",50,7.7,-4.1,-47.2],["光之巨人",49.4,1.8,-6.2,-31.7],["魔术师",49,1.5,-1.3,-7.4],["狱卒",48.5,1.1,-5.8,-9],["船员",47.7,189.4,5.8,180.6],["守望者",45.8,7.6,-5.7,-6.4],["医生",45.6,8.5,-6.4,-17.9],["老兵",45.3,7.7,-8,-17.3],["侦探",45.1,2,-4.5,-7.5],["守卫",45,3.1,-8.7,-2],["保安",45,2.2,-10,-1.6],["管道工",44.2,5.9,-11.8,-5.4],["预言家",43.1,13.3,-9.6,-11.3],["猎人",42.1,3.4,-9.7,-7.4],["情报员",41.7,3.6,-6.7,-3.4],["黑客",41.4,6.3,-8.5,0],["工程师",40,6.7,-19.1,-19.2],["市长",35.2,2,-21,-5.9]],"invader":[["蛇精",51.4,0.1,16.5,-0.6],["伪人",46.9,2.1,20,-1],["熊大熊二",45.8,0.6,12.3,-3.7],["教父",43.1,2.9,10.6,-12.1],["忍者",42.6,2.1,17.2,-0.8],["吸血鬼",42.4,1.4,14.1,-8.7],["鬼新娘",41.5,1.1,11.2,-3.3],["摄魂怪",41.2,4.4,8.6,-11.6],["时间刺客",41.2,2.1,14.4,-4],["赏金猎人",40.7,2.6,12.6,-10.1],["清洁工",40.2,6.7,15.2,-2.5],["搬运工",39.6,1.1,12.2,-0.9],["小黑",39.4,0.3,11.5,-1.1],["变色龙",39.3,39.2,15,32.1],["狙击手",39.3,25.5,14,16.9],["间谍",39,3.7,14.9,-1.4],["捣蛋鬼",37.9,0.5,10.1,-3],["收割者",37.8,0.9,6.5,-6.4],["双面人",37.7,11.4,5.5,-27.7],["欺诈师",37.7,1.5,11.2,-4.4],["女巫",37.6,3.5,12.4,-1.8],["内鬼",37.4,5.6,16.7,3.3],["闪光弹",37.4,1.3,12.1,-1.3],["女帝",37.2,0.8,9,-2.2],["暗之巨人",36.9,0.9,10.8,-3.2],["孙悟空",36.5,2.4,14,-0.5],["咒术师",34.3,5.3,11.9,-0.9],["收债人",33,0.9,9.3,-6],["守夜人",28.9,1.7,5.3,-0.8]],"neutral":[["幸存者",72.3,4.3,3.7,-31.8],["丘比特",57,1.8,10.7,-14.4],["墙头草",56.4,1,-3.1,-10.7],["小蜜蜂",54.5,5.9,0,-20.8],["怪盗",33.2,1,-1.3,-19.8],["奶龙",32.2,0.6,12.1,-3.9],["神子",28.6,0.5,3.4,-4.1],["恶魔",27.7,1.3,1.2,-4.1],["无面人",24.6,2,6.9,-11.4],["大胃王",20.1,9.7,7.9,-3.8],["小丑",19.7,5.2,4.7,-4],["焰火师",19.5,4.9,-4.8,-11.4],["怪兽",16.2,16.8,-1.3,6],["饕餮",12.5,1.2,1.4,-1.8],["幻影",9.2,1.7,-2.7,-5.7]]},"2026-04-22":{"astronaut":[["卧底",57.1,4.9,0,0],["毛利兰",57.1,9.6,0,0],["时间之主",55.9,19.5,0,0],["逍遥",55.5,8.5,0,0],["柯南",55.2,37.7,0,0],["葫芦兄弟",55,54.4,0,0],["灰原哀",53.8,8.1,0,0],["法官",53.8,14.8,0,0],["武士",53.6,19.3,0,0],["守卫",53.4,4.7,0,0],["光之巨人",53.3,34.9,0,0],["考古学家",53.1,7.5,0,0],["警长",53,72.5,0,0],["市长",53,7.8,0,0],["老兵",52.8,26.9,0,0],["勇者",52.6,10.9,0,0],["医生",51.9,27.6,0,0],["守望者",51.9,15.1,0,0],["国王",51.9,9.8,0,0],["单面人",51.8,51.1,0,0],["狱卒",51.7,9.8,0,0],["诱饵",51.7,12.9,0,0],["保安",51.2,4,0,0],["管道工",51.1,6.4,0,0],["换票师",50.8,17.4,0,0],["黑客",50.5,6.5,0,0],["预言家",50.1,20.8,0,0],["工程师",50,14,0,0],["猎人",50,12,0,0],["哪吒",49.9,20.5,0,0],["情报员",48.9,6.7,0,0],["魔术师",48.6,9.1,0,0],["侦探",48.3,8.4,0,0],["船员",45.4,6.1,0,0]],"invader":[["鬼新娘",38.1,5.1,0,0],["教父",37.6,14.6,0,0],["摄魂怪",36.1,17.1,0,0],["双面人",35.5,35.8,0,0],["收割者",35.5,6.5,0,0],["女帝",35.3,5.4,0,0],["熊大熊二",34.4,3.9,0,0],["赏金猎人",33.4,15.3,0,0],["时间刺客",32.8,5.9,0,0],["吸血鬼",32.4,10.4,0,0],["欺诈师",31.3,5.5,0,0],["暗之巨人",31,4.1,0,0],["蛇精",30.9,0.9,0,0],["搬运工",30.4,2.1,0,0],["间谍",30,5.1,0,0],["忍者",30,2.6,0,0],["狙击手",29.2,7.7,0,0],["捣蛋鬼",29.2,3.3,0,0],["伪人",29,3.7,0,0],["闪光弹",28.3,2,0,0],["变色龙",27.9,7.1,0,0],["女巫",27.8,7.5,0,0],["清洁工",27.4,8.5,0,0],["小黑",27,1.2,0,0],["孙悟空",26.7,2.9,0,0],["收债人",26.5,5.5,0,0],["咒术师",26.3,5.3,0,0],["内鬼",23.4,1.8,0,0],["守夜人",22.7,3.2,0,0]],"neutral":[["幸存者",70.3,39.3,0,0],["墙头草",53.3,13.2,0,0],["小蜜蜂",46.7,26.7,0,0],["丘比特",43.4,17.1,0,0],["怪盗",30.2,21.2,0,0],["神子",26.1,4.7,0,0],["恶魔",24.3,5.1,0,0],["幻影",23.2,15.3,0,0],["饕餮",17.2,4.1,0,0],["无面人",17.2,10.9,0,0],["小丑",15.1,9.1,0,0],["大胃王",13.7,13.9,0,0],["焰火师",12.8,8.2,0,0],["怪兽",12.2,7.4,0,0],["奶龙",8.1,3.8,0,0]]}},"巅峰赛":{"2026-04-10":{"astronaut":[["换票师",50.1,33.3,0.6,2.3],["守望者",49.7,29.6,0.3,-0.6],["市长",48.8,20.2,0.4,-1],["卧底",48.6,17.6,1.4,1.8],["武士",48.5,43.8,-0.2,-1.5],["狱卒",48,19.4,1.4,-1.5],["时间之主",47.8,20.9,-3,-1.3],["黑客",47.7,22.5,-0.8,1.1],["国王",47.7,19.2,0.8,-0.1],["勇者",47.6,22.4,-1.1,2.3],["工程师",47.1,32.1,-3.3,-1.5],["单面人",47,39.8,0,0.6],["守卫",46.8,21,-0.8,1],["诱饵",46.8,99.8,-1.1,0],["警长",46.4,99.9,-1.4,0.1],["猎人",45.9,30,-2.8,-0.5],["哪吒",45.9,24.4,-2.1,0.5],["老兵",45.8,23.4,-1.3,0.2],["管道工",45.5,22.2,-1.4,-1.9],["光之巨人",45.3,29.8,-2.3,0.7],["情报员",44.9,18.9,-3.2,1.9],["保安",44.9,16.1,-6.3,-1],["魔术师",44.3,19.3,3.2,1.9],["预言家",44.2,22.9,-2.2,-1.4],["侦探",43.4,22.8,-3.2,-0.6],["医生",42.9,29,-3.5,-1.2]],"invader":[["捣蛋鬼",48.4,11.2,0.9,0.6],["摄魂怪",45.2,29.2,-2.2,0.1],["欺诈师",44.9,8.6,2.2,-3.5],["孙悟空",44.7,6,7,0],["女帝",43.9,6.3,-1,-1.4],["小黑",42.6,5.9,-2.3,0.1],["时间刺客",42.1,8.9,0.7,-2.2],["咒术师",41.7,8.5,7.5,-0.5],["变色龙",41.5,9.2,-0.1,0.8],["双面人",41.1,96.6,-0.4,0],["清洁工",40.7,15.9,-0.5,0.1],["搬运工",40.6,7.3,6.8,0.9],["吸血鬼",40.2,11.1,1.7,0.5],["暗之巨人",39.9,7.9,-1.1,0.3],["间谍",39.7,8.6,-2.7,0],["女巫",39.1,9.1,2.9,2.4],["伪人",38,7.3,-1.2,0.4],["狙击手",37.5,8.9,-0.7,1.2],["赏金猎人",36.9,10.3,-7.3,-0.3],["闪光弹",36.5,6.7,-1.5,0.4],["忍者",33.6,7.9,-9.4,-0.5],["守夜人",32.2,8.6,-4.8,0.8]],"neutral":[["小丑",21.2,20.7,4,1.4],["恶魔",20.1,12,0.8,-0.3],["焰火师",14.4,21.5,5.5,2.3],["幻影",8,12.7,-2.6,-1.8],["饕餮",4.7,12.1,0.9,1.1],["怪兽",4.7,9.3,-0.6,-1.2],["大胃王",4.6,11.7,-1.1,-1.5]]},"2026-04-11":{"astronaut":[["换票师",49.5,33.9,0.2,1.9],["守望者",49.5,30.3,-0.9,0.8],["时间之主",49.5,27.2,-1.5,0.4],["卧底",49.4,15.6,-0.9,-0.5],["武士",48.8,41.4,-0.9,-2.3],["黑客",48.4,19.9,-1.8,-0.3],["保安",48.4,18.6,2.5,1.2],["工程师",48.3,29.7,0.1,-1.8],["国王",47.6,19.6,0.1,1.4],["守卫",47.4,19.9,-0.6,-1.9],["光之巨人",47.4,29.7,-2.2,1],["市长",47.3,20.7,-0.3,0.2],["诱饵",47.1,99.8,-1.3,-0.1],["警长",46.9,99.9,-1.3,0],["单面人",46.7,39.7,-1.6,-1.5],["猎人",46.7,32.8,-1.4,3.3],["情报员",45.9,17.6,-2.6,-0.6],["医生",45.7,25.8,-2.6,-1.8],["管道工",45.5,22,-1.6,-0.3],["狱卒",45.5,20.2,-3.1,-0.3],["勇者",45.2,20.5,-3.1,-2.2],["老兵",45.1,25,-1.9,1.4],["预言家",44.9,23.9,-1.9,0.6],["侦探",44.6,22.8,-3.6,1.6],["哪吒",43.8,24.8,-1,-0.3],["魔术师",43.6,18.5,-1.2,-0.1]],"invader":[["摄魂怪",46.9,28.5,3.9,-2],["清洁工",43.3,15.4,1.2,0.2],["女帝",43.3,8.4,0.3,0.9],["忍者",43,8.8,0.8,0.2],["变色龙",42.5,9.2,3.8,-0.6],["时间刺客",42.3,10.1,4,2.4],["赏金猎人",42.2,10.1,3,-1],["狙击手",41.9,8.3,3.2,0.5],["双面人",41.7,97.1,1.9,0.3],["闪光弹",41.7,7.1,0.9,-0.3],["吸血鬼",41.7,11.9,3,1.2],["间谍",41.2,9,-1.7,0.3],["捣蛋鬼",41.2,9.2,3.4,0.5],["搬运工",41,6.7,2.7,0.2],["小黑",39.8,5.9,-3,0.6],["暗之巨人",39.7,7.6,2.1,0.3],["欺诈师",38.9,8.5,-2.7,-3.4],["女巫",38.4,7.6,0.3,0],["孙悟空",38.4,6.5,4.9,0.3],["伪人",37.9,7,-3.3,0.1],["守夜人",37,8.3,3,-0.3],["咒术师",37,8.7,1.4,-0.5]],"neutral":[["恶魔",20.1,12.1,3.4,-0.7],["小丑",19,21.3,-1.6,-0.2],["幻影",10.9,16.4,0.5,-0.4],["焰火师",8.9,16.8,-1.7,2.1],["怪兽",5.5,9.4,-1.8,-0.7],["饕餮",5.2,11.5,-0.1,-0.6],["大胃王",4.8,12.5,-0.9,0.4]]},"2026-04-12":{"astronaut":[["时间之主",48.6,24.4,-3.2,0.5],["卧底",48.4,16.3,-1.2,0.1],["国王",48.2,19.3,-0.7,2.2],["换票师",47.8,33.6,-2,1.1],["黑客",47.8,22.4,-0.5,1.6],["守望者",47.8,27.2,-3.5,-0.7],["守卫",47.5,20.9,0.1,-0.8],["光之巨人",47.2,31.1,-2.2,0.9],["预言家",47.1,22.5,0.2,0.5],["市长",47,19.7,-0.9,1],["武士",46.7,41.9,-3.5,-2],["保安",46.4,18.2,-0.6,1.1],["管道工",46.3,26.5,-4,-0.5],["警长",46.2,100,-1.8,0.1],["诱饵",46.2,99.9,-1.9,0.2],["老兵",46.1,23.8,-0.9,-1.8],["勇者",46.1,20.7,-0.4,-2],["工程师",46,32.2,-2.7,-2.3],["单面人",46,38.8,-0.8,-0.4],["狱卒",45.3,21.5,-2.1,0.4],["猎人",44.9,28.9,-2.2,-0.5],["医生",44.8,26.2,-0.9,-2.5],["哪吒",44.1,24.5,0,2.7],["情报员",43.7,18.5,-1.9,0.7],["侦探",43.1,22.3,-4.5,-0.3],["魔术师",41.5,18.9,-3,0.9]],"invader":[["清洁工",47.4,14.6,4,-1.3],["摄魂怪",46.2,30.7,0.6,2.5],["暗之巨人",43.7,7.5,1.8,0.5],["女帝",43.4,7.5,5.9,0.3],["时间刺客",42.9,9.9,1.4,1.8],["小黑",42.9,5.8,3.4,-0.7],["捣蛋鬼",42.7,8.2,1.5,-0.1],["忍者",42.1,9.4,-1.6,1],["双面人",42,97.3,0.9,0],["间谍",41.9,9.1,2.1,-0.2],["吸血鬼",41.9,10.7,2.4,0.6],["伪人",41.3,6.7,-0.7,-0.8],["闪光弹",41,8,2.2,0.1],["赏金猎人",41,9,1.7,-0.3],["女巫",40.5,8.1,1.6,0.7],["变色龙",40.4,9.4,-1.3,-0.7],["孙悟空",40.1,6.2,0.7,-0.6],["欺诈师",39.9,8.9,-1.2,-1.3],["守夜人",38.8,8,2.3,-1.2],["咒术师",38.8,9.5,-1.7,0],["搬运工",37.3,7.5,-3.1,0.2],["狙击手",36.1,8,-4.1,-0.5]],"neutral":[["小丑",18.1,20.3,2,-0.2],["恶魔",17.5,11.2,0.2,-0.1],["焰火师",13.3,18.2,0.7,2],["幻影",9.5,17.9,0.2,-0.9],["怪兽",7.9,10,-0.4,-0.2],["饕餮",5.7,10.3,1.7,-0.3],["大胃王",5.5,12.1,0.6,-0.3]]},"2026-04-13":{"astronaut":[["守卫",54.2,17.9,7.2,-3.2],["守望者",51.3,29.3,3.8,0.8],["保安",50.6,17.2,4.1,-0.5],["黑客",50.1,25.2,2.3,1.5],["猎人",49.8,29.5,2.9,-0.6],["国王",49.7,19.5,5.7,1.1],["时间之主",49.5,24,-1.5,-1.9],["换票师",49,35.6,1,2.4],["工程师",48.9,30.1,1.8,1.2],["卧底",48.5,14.8,1.3,-1.5],["医生",48.1,27.9,4.6,-0.4],["勇者",47.9,21,1.4,-1.4],["管道工",47.8,21.6,2.6,-1.2],["诱饵",47.7,99.8,1.7,0],["警长",47.6,99.9,1.7,0],["魔术师",47.4,17,6,-2.5],["预言家",46.9,24.4,1.4,1.5],["光之巨人",46.9,28.8,1.4,0.7],["单面人",45.8,39.8,0.2,-0.6],["老兵",45.4,25.3,0.6,1.1],["武士",45.4,42.5,-1.9,1.2],["市长",44.4,19.9,-1.3,-0.3],["侦探",44.2,23.6,-1,0.5],["哪吒",43.4,25.3,0.8,1.2],["狱卒",42.9,19.4,-3.5,-2],["情报员",39.6,20.7,-2.5,3]],"invader":[["赏金猎人",43,10.8,2.4,0.9],["清洁工",41.6,14.4,0.1,-1.8],["时间刺客",41.4,8.7,4.9,1.4],["捣蛋鬼",39.5,7.9,-1.8,-0.9],["摄魂怪",39,26.5,-6.4,-1.2],["间谍",38.1,9.4,-1.7,0.1],["忍者",37.7,8.7,-5,0.1],["暗之巨人",37,8.5,-4.1,1.5],["小黑",36.4,4.8,-1.8,-2.1],["双面人",35.9,97.8,-4.5,0.4],["伪人",35.9,6.6,-5.7,-1.2],["搬运工",35,6.3,-1.9,-1.2],["欺诈师",34.6,8.3,-8.8,-1.7],["守夜人",34.5,11.1,-3.9,2.3],["咒术师",33.5,10.5,-4.9,1.8],["孙悟空",33.3,6.4,-2.1,0.2],["女帝",32.4,9.5,-14.4,1.8],["吸血鬼",32.4,9.3,-4.1,-1.1],["狙击手",31.5,8.4,-7,-0.4],["变色龙",31.4,10,-11.2,0.3],["闪光弹",31,6.9,-2.6,-0.5],["女巫",29.7,9.1,-10.5,1.1]],"neutral":[["幻影",23.2,32.3,4.7,3.4],["小丑",21.3,16,2.6,0.3],["恶魔",20.1,9.6,1.2,0],["焰火师",11.2,12.5,-1,-0.9],["怪兽",8.1,8.7,1.8,-1.2],["饕餮",7.6,9.9,4,-0.3],["大胃王",7.6,11,0.7,-1.4]]},"2026-04-14":{"astronaut":[["时间之主",42.9,21.4,-0.3,-2.1],["守卫",41.6,20.7,0.7,-1.7],["卧底",40.8,17.2,-1.8,0.5],["魔术师",40.2,18.6,4.4,-0.5],["情报员",39.8,22.4,-0.4,1.3],["守望者",39.7,28.1,1.7,1.7],["武士",39.4,38.8,-0.8,-2.4],["单面人",39.4,40.2,1.3,3.5],["光之巨人",38.8,28,-0.7,-2.2],["预言家",38.6,24.4,-2,-0.8],["医生",38.4,27.9,-2.2,-0.8],["保安",38.3,20.4,2.7,4.3],["诱饵",38.2,99.8,-0.4,-0.2],["警长",37.9,99.9,-0.8,0],["猎人",37.6,31.1,-1.6,0.5],["换票师",37.4,34.2,-2.7,1.6],["勇者",37.2,23.1,-1.5,-0.8],["侦探",36.9,22.1,-2.2,-0.4],["管道工",36.7,23.9,3.4,0.3],["狱卒",36.7,18.5,-1.1,-4.7],["哪吒",36.7,27.4,-1.8,2.6],["国王",36.2,21.3,-4,2.9],["市长",35.8,19.2,1.2,-2.5],["老兵",34.9,25.8,0.7,0.1],["黑客",34,21.1,-4.9,-0.4],["工程师",33.9,24.5,-6.1,0.2]],"invader":[["女巫",59.7,26.3,2.2,0.5],["摄魂怪",57.6,37.1,4,3],["时间刺客",56.9,8.6,0.8,0.9],["清洁工",53.5,14.6,1.6,-2.4],["守夜人",53.4,6.6,3.7,-0.9],["捣蛋鬼",52.9,7,1,-0.9],["女帝",52.4,10.5,2.4,-1.3],["欺诈师",52.4,8.4,5.3,-0.2],["双面人",51.7,94.7,-0.3,0.3],["忍者",50.6,7.7,-3.3,0.6],["赏金猎人",49.3,7,-8.3,-2.3],["狙击手",48.8,6.1,-1.6,-0.7],["咒术师",48.7,8,0.9,-0.2],["伪人",48.7,5.8,-1.3,0.3],["吸血鬼",47.9,7.3,4.5,0.5],["变色龙",47.4,8.6,0.5,1.4],["小黑",46.5,4.9,0.7,-0.9],["搬运工",46.3,4.7,-6.5,-0.7],["闪光弹",46,6.4,-9.4,1.4],["间谍",45.8,7.7,-0.1,1.6],["暗之巨人",43.7,6.5,-3.3,-0.1],["孙悟空",42.5,5.5,-17.5,0]],"neutral":[["恶魔",18.9,11.3,0.6,0.2],["小丑",13.5,18.8,1.2,1.1],["焰火师",11.3,19.9,-0.1,1.5],["大胃王",9.7,13,3.9,0.1],["饕餮",5.1,11,2.5,1.5],["幻影",5,16.1,-1.8,-3],["怪兽",5,9.9,-2.1,-1.2]]},"2026-04-15":{"astronaut":[["预言家",41.5,24.8,7.2,-2],["光之巨人",40.7,28.8,3.7,3.1],["狱卒",39.5,20.6,8,-0.2],["时间之主",39.3,22.9,2,-1.2],["保安",38.2,18.1,8.1,1.8],["武士",38.2,40.1,0.1,1.6],["国王",38.2,19.5,3.9,-0.4],["守望者",38.1,24.7,1.2,-1.5],["卧底",37.8,17,-0.9,-0.9],["侦探",37.3,26.1,0.6,2.8],["管道工",37,22.2,4,-1.1],["诱饵",37,100,1.3,0],["警长",36.9,99.8,1.2,-0.2],["医生",36.5,25.3,0.8,-1.9],["单面人",36.5,39.1,0,-3.1],["哪吒",36.5,26.4,3.4,-0.3],["工程师",36.4,25.7,4,-0.3],["黑客",36.3,22.9,-2.2,2.4],["守卫",35.9,22.7,-0.1,2.4],["老兵",35.4,26.5,1.4,-1.7],["猎人",35.3,32.2,-1.7,0.7],["换票师",35.2,31.3,-1.4,-1],["情报员",35.1,22,-1.9,2.9],["勇者",35,22.5,-2.8,0.9],["市长",34.9,19.4,-3.3,-1.9],["魔术师",31.5,19.2,-1.7,-1]],"invader":[["女巫",55.6,9,7.1,0.2],["忍者",53.6,8.4,-1.1,1.1],["捣蛋鬼",52.1,6.5,-5.6,-2.2],["女帝",51.1,10.1,-1.2,1],["清洁工",49.8,14.1,-0.4,-2],["摄魂怪",49.1,34.9,-2.4,3.3],["欺诈师",48.6,7.7,-0.3,0.7],["守夜人",48.4,8.6,0.7,0.5],["双面人",46.9,95.3,-2.7,2],["暗之巨人",45.8,7.6,-1.4,1],["吸血鬼",45.7,9.5,-3.8,-0.3],["孙悟空",45.6,6.8,-1.6,0.1],["间谍",45.5,8.5,-1.6,-0.9],["伪人",44.9,7,-1,-2.8],["咒术师",44.3,7.9,-2.1,-0.2],["变色龙",44,9.6,-3.3,0],["闪光弹",43.6,7.2,-5.5,1.2],["赏金猎人",43.6,11.4,-8.8,-1.8],["时间刺客",43.5,10.6,-9,2.1],["搬运工",41.3,5.6,-6.9,-3.3],["小黑",38.9,5.2,-13.8,-0.8],["狙击手",38.2,8.5,-5.1,1.4]],"neutral":[["幻影",23.7,34.8,3.3,0.7],["小丑",16.9,13.8,-5.8,-2.2],["焰火师",12.9,11.2,5.8,-0.9],["恶魔",12.9,9.4,-1.7,1.1],["大胃王",10.7,10.7,6.6,0.4],["怪兽",10,9.4,5.3,0.3],["饕餮",8,10.8,-1.7,0.7]]},"2026-04-16":{"astronaut":[["时间之主",45.4,25.6,-0.2,-0.5],["换票师",43.5,31.9,-0.5,-0.2],["工程师",43,33.1,-2.2,-0.2],["武士",42.9,38.9,0,-1.9],["光之巨人",42.4,26.3,-2.1,-1.5],["预言家",42.3,23.9,-1.6,-0.4],["守望者",42,28.4,-1.8,0.3],["老兵",41.6,27,0.9,2.5],["管道工",40.8,20.7,0.1,-1.8],["诱饵",40.1,99.9,-3.2,-0.1],["警长",39.9,99.9,-3.1,0],["医生",39.8,27.3,0.7,1.1],["守卫",39.6,20.8,-8.2,1.4],["哪吒",39.2,23.8,-2.6,-3.6],["勇者",39.1,23.5,-3.8,-0.8],["侦探",39,21.2,-4.8,-0.4],["狱卒",38.8,20.9,0.9,1.9],["保安",38.7,17.6,-8.3,0.4],["魔术师",38.7,20.8,-6.8,1.8],["单面人",38.3,38.4,-2.8,-3.8],["国王",38,22.1,-5.4,2.1],["情报员",37.8,19.7,-6.7,0.8],["猎人",37.8,30.6,-2.7,0.7],["市长",37.3,18.5,-4.9,-1.8],["卧底",37.1,15.6,-8,-0.2],["黑客",36.8,19.6,-9.1,0.2],["考古学家",27,2.4,0,0]],"invader":[["伪人",56.4,5.1,11.4,-0.6],["欺诈师",56.2,8.9,7,1.7],["捣蛋鬼",54.5,9.1,12.8,0.7],["暗之巨人",52.2,7.5,6.2,0.5],["收债人",51.7,1.7,0,0],["吸血鬼",50.9,9.5,7.1,-0.7],["摄魂怪",50.2,33.5,-0.4,0.9],["赏金猎人",49,13.9,6,3.3],["女巫",48.5,7.2,7.7,0.6],["双面人",47.4,96,2.7,-0.2],["清洁工",46.6,16,-2.2,2],["搬运工",46.6,5.6,5.9,-3.6],["咒术师",46.4,9.9,8.4,0.4],["间谍",45.9,8.7,1.3,-0.3],["忍者",44.4,7.6,5.8,-1.2],["时间刺客",43.8,9.4,-2.3,-0.2],["变色龙",43,10.4,-2.4,-0.8],["守夜人",42.3,7.3,4.1,0.3],["闪光弹",41.7,6.2,-6.9,0],["小黑",41.7,4,-11.5,-1.6],["孙悟空",41.3,6.6,0.5,-0.9],["狙击手",40,8.6,-0.3,0.1],["女帝",39.8,8.6,-6.8,-0.6]],"neutral":[["小丑",21.4,19.1,6.1,1.3],["恶魔",16.2,9.9,-4.3,-2.1],["焰火师",13.2,19,-2.5,2.5],["怪兽",10.2,9.1,5.2,1],["大胃王",8.7,11,1.3,-0.7],["幻影",8.3,18.2,-4.1,-3.5],["饕餮",7.6,13.6,3.8,1.4]]},"2026-04-19":{"astronaut":[["守望者",56.9,28,9.1,0.8],["狱卒",54.5,16.1,9.2,-5.4],["黑客",54,17.7,6.2,-4.7],["工程师",53.2,42.5,7.2,10.3],["医生",53.2,26.3,8.4,0.1],["侦探",53,23.4,9.9,1.1],["光之巨人",52.7,24.1,5.5,-7],["时间之主",52.5,24,3.9,-0.4],["守卫",52.2,23.5,4.7,2.6],["卧底",52.2,16.4,3.8,0.1],["国王",52,17.5,3.8,-1.8],["考古学家",51.9,23,0,0],["保安",51.8,17.8,5.4,-0.4],["诱饵",51.6,98.8,5.4,-1.1],["换票师",51.5,35.6,3.7,2],["警长",51.4,99.6,5.2,-0.4],["魔术师",51.4,15.1,9.9,-3.8],["管道工",50.9,26.6,4.6,0.1],["市长",50.7,21.9,3.7,2.2],["武士",50.4,44.2,3.7,2.3],["单面人",50.4,35.3,4.4,-3.5],["预言家",50.1,20.7,3,-1.8],["情报员",50.1,19.3,6.4,0.8],["老兵",49.7,19.3,3.6,-4.5],["勇者",49.4,20.2,3.3,-0.5],["猎人",49,22.7,4.1,-6.2],["哪吒",46.9,20.5,2.8,-4]],"invader":[["闪光弹",44.2,7.3,3.2,-0.7],["摄魂怪",42.3,29.1,-3.9,-1.6],["女巫",41.1,6.8,0.6,-1.3],["清洁工",41,17.5,-6.4,2.9],["时间刺客",40.6,10.5,-2.3,0.6],["搬运工",40,7,2.7,-0.5],["小黑",39.3,4.1,-3.6,-1.7],["欺诈师",38.8,10.9,-1.1,2],["变色龙",37.7,9.9,-2.7,0.5],["双面人",37.7,94,-4.3,-3.3],["间谍",37.2,10.5,-4.7,1.4],["忍者",36.5,8.7,-5.6,-0.7],["吸血鬼",36.5,7.7,-5.4,-3],["暗之巨人",36,6.6,-7.7,-0.9],["守夜人",35.8,7.3,-3,-0.7],["伪人",35.8,5.1,-5.5,-1.6],["狙击手",35.6,8.6,-0.5,0.6],["赏金猎人",34.7,10.8,-6.3,1.8],["捣蛋鬼",34.5,8.2,-8.2,0],["女帝",34.1,6,-9.3,-1.5],["收债人",33.7,8.7,0,0],["咒术师",32.1,10.1,-6.7,0.6],["孙悟空",32,4.7,-8.1,-1.5]],"neutral":[["小丑",19.1,19.4,1,-0.9],["恶魔",17.6,13.3,0.1,2.1],["幻影",11.9,21.1,2.4,3.2],["怪兽",6.9,8.6,-1,-1.4],["焰火师",6.6,12.6,-6.7,-5.6],["大胃王",3.6,12.1,-1.9,0],["饕餮",2.2,13,-3.5,2.7]]},"2026-04-20":{"astronaut":[["侦探",56.6,18.2,3.6,-5.2],["老兵",56.5,20.9,6.8,1.6],["考古学家",55.4,16.4,3.5,-6.6],["猎人",54.9,26.6,5.9,3.9],["预言家",54.6,19.3,4.5,-1.4],["卧底",53.5,15.9,1.3,-0.5],["换票师",53.2,35.6,1.7,0],["市长",53.1,18.2,2.4,-3.7],["光之巨人",52.5,32.7,-0.2,8.6],["守望者",51.7,29.6,-5.2,1.6],["武士",51.7,46,1.3,1.8],["管道工",51.6,18.8,0.7,-7.8],["诱饵",51.5,99.3,-0.1,0.5],["警长",51.1,99.8,-0.3,0.2],["时间之主",51,24.2,-1.5,0.2],["黑客",50.3,19.4,-3.7,1.7],["勇者",50.2,24.2,0.8,4],["情报员",50,18.1,-0.1,-1.2],["单面人",49.9,42.5,-0.5,7.2],["医生",49.8,27.3,-3.4,1],["守卫",49.6,24.2,-2.6,0.7],["国王",49.5,20.7,-2.5,3.2],["工程师",49,33.8,-4.2,-8.7],["狱卒",48.9,18.2,-5.6,2.1],["哪吒",46.9,19.2,0,-1.3],["魔术师",45.9,17,-5.5,1.9],["保安",44.4,14.5,-7.4,-3.3]],"invader":[["女帝",46.6,8.7,12.5,2.7],["伪人",43.3,6.7,7.5,1.6],["清洁工",43.1,14.5,2.1,-3],["赏金猎人",40.5,11.4,5.8,0.6],["变色龙",39.1,11,1.4,1.1],["搬运工",37.9,9.4,-2.1,2.4],["摄魂怪",37.6,21.5,-4.7,-7.6],["暗之巨人",36.5,6.5,0.5,-0.1],["女巫",36.4,9.2,-4.7,2.4],["双面人",36.3,97.2,-1.4,3.2],["欺诈师",36.2,10.5,-2.6,-0.4],["时间刺客",35.2,9.3,-5.4,-1.2],["小黑",34.7,7.1,-4.6,3],["间谍",34.2,7.7,-3,-2.8],["捣蛋鬼",33.3,6.5,-1.2,-1.7],["收债人",33.3,8.2,-0.4,-0.5],["吸血鬼",32.9,7.8,-3.6,0.1],["闪光弹",32.1,7.9,-12.1,0.6],["咒术师",31.5,9,-0.6,-1.1],["狙击手",30.4,7.1,-5.2,-1.5],["忍者",29.1,8.4,-7.4,-0.3],["守夜人",28.9,8.3,-6.9,1],["孙悟空",23.4,6.3,-8.6,1.6]],"neutral":[["恶魔",22.7,8.6,5.1,-4.7],["幻影",18.4,32.6,6.5,11.5],["小丑",17.8,16.3,-1.3,-3.1],["饕餮",6.3,9.5,4.1,-3.5],["焰火师",6,13.4,-0.6,0.8],["怪兽",3.3,8.9,-3.6,0.3],["大胃王",2.8,10.8,-0.8,-1.3]]},"2026-04-22":{"astronaut":[["换票师",49.6,30.4,0,0],["勇者",47.2,23.4,0,0],["考古学家",47.2,20.2,0,0],["时间之主",45.7,21.7,0,0],["卧底",45.6,14.5,0,0],["工程师",44.1,22.4,0,0],["守卫",43.9,19.9,0,0],["保安",43.9,16.2,0,0],["单面人",43.3,37.5,0,0],["光之巨人",43.1,29.6,0,0],["市长",42.9,22,0,0],["老兵",42.7,23.3,0,0],["猎人",42.5,26.7,0,0],["守望者",42.1,30.8,0,0],["警长",41.7,99.9,0,0],["魔术师",41.7,16.8,0,0],["诱饵",41.4,99.8,0,0],["武士",40.3,47.2,0,0],["管道工",40.1,21.1,0,0],["医生",39.3,27.2,0,0],["侦探",38.6,23.6,0,0],["预言家",38.5,22.6,0,0],["情报员",38.4,20,0,0],["狱卒",38.2,18,0,0],["黑客",35.5,22.6,0,0],["哪吒",34.3,20.8,0,0],["国王",33.6,21.6,0,0]],"invader":[["时间刺客",54,11.2,0,0],["女帝",48.9,10.3,0,0],["摄魂怪",48.4,32.9,0,0],["清洁工",47,15.3,0,0],["闪光弹",45.8,6.2,0,0],["搬运工",44.9,7.3,0,0],["伪人",44.9,6.8,0,0],["欺诈师",44.3,9.1,0,0],["赏金猎人",44.2,9.6,0,0],["狙击手",43.7,6.7,0,0],["双面人",43,95,0,0],["忍者",42.7,9.9,0,0],["变色龙",42.5,8.1,0,0],["暗之巨人",40.9,7.1,0,0],["间谍",40.7,6.5,0,0],["捣蛋鬼",40,5.4,0,0],["咒术师",38.5,8.7,0,0],["女巫",38.4,10.4,0,0],["孙悟空",37.9,5,0,0],["守夜人",36,7.4,0,0],["吸血鬼",36,8.7,0,0],["小黑",34.8,5.3,0,0],["收债人",30.2,7.1,0,0]],"neutral":[["恶魔",20.5,10,0,0],["幻影",20.5,35.7,0,0],["小丑",17.1,13.2,0,0],["大胃王",12.2,11.1,0,0],["焰火师",9.4,9.7,0,0],["怪兽",8.9,9.2,0,0],["饕餮",4.7,11.1,0,0]]}}};
+
+let lineCharts = {};
+let barCharts = {};
+
+function calcScore(winRate, pickRate, mode, faction) {
+    const b = baselines[mode]?.[faction];
+    if (!b) return 0;
+    const wr_range = b.wr_p90 - b.wr_p50 || 1;
+    const pr_range = b.pr_p90 - b.pr_p50 || 1;
+    const wr_dev = (winRate - b.wr_p50) / wr_range;
+    const pr_dev = (pickRate - b.pr_p50) / pr_range;
+    const wr_score = Math.sign(wr_dev) * Math.pow(Math.abs(wr_dev), 0.7);
+    const pr_score = Math.sign(pr_dev) * Math.pow(Math.abs(pr_dev), 0.7);
+    return wr_score * 0.7 + pr_score * 0.3;
+}
+
+function getTier(score) {
+    if (score >= 0.5) return { tier: 'T1', label: '顶尖', color: '#ef4444' };
+    if (score >= 0.3) return { tier: 'T2', label: '强势', color: '#f59e0b' };
+    if (score >= 0.1) return { tier: 'T3', label: '平稳', color: '#22c55e' };
+    return { tier: 'T4', label: '弱势', color: '#6b7280' };
+}
+
+function buildLineData(mode, roleNames) {
+    const dates = Object.keys(allData[mode] || {}).sort();
+    const colors = ['#4ade80','#60a5fa','#f472b6','#fbbf24','#a78bfa','#f87171','#22d3ee','#fb923c'];
+    const datasets = roleNames.map((name, i) => {
+        const color = colors[i % colors.length];
+        const dataPoints = dates.map(d => {
+            for (const f of ['astronaut', 'invader', 'neutral']) {
+                const e = (allData[mode]?.[d]?.[f] || []).find(x => x[0] === name);
+                if (e) return e[1];
+            }
+            return null;
+        });
+        return { label: name, data: dataPoints, borderColor: color, backgroundColor: color + '33', tension: 0.3, fill: false };
+    });
+    return { labels: dates, datasets };
+}
+
+function buildBarDataFor(mode, date) {
+    const roles = [];
+    for (const f of ['astronaut', 'invader', 'neutral']) {
+        for (const e of (allData[mode]?.[date]?.[f] || [])) {
+            const score = calcScore(e[1], e[2], mode, f);
+            const tier = getTier(score);
+            roles.push({ name: e[0], winRate: e[1], pickRate: e[2], score, tier });
         }
-        @media (max-width: 600px) {
-            .sidebar { padding: 10px 12px; }
-            .sidebar h3 { font-size: 12px; margin-bottom: 8px; }
-            .mode-btn { padding: 10px 12px; font-size: 13px; margin-bottom: 4px; }
-            .main { padding: 12px; }
-            .chart-wrapper { height: 200px; }
-            .chart-box { padding: 12px; border-radius: 8px; }
-            .identity-selector { padding: 12px; margin-bottom: 16px; }
-            .chart-grid { gap: 16px; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="sidebar">
-            <h3>🎮 模式选择</h3>
-            <button class="mode-btn active" data-mode="诸神排位">⚔️ 诸神排位</button>
-            <button class="mode-btn" data-mode="巅峰赛">🏆 巅峰赛</button>
-            <button class="mode-btn" data-mode="特别行动单人排位">💥 特别行动</button>
-            <h3 style="margin-top:20px;">⚔️ 阵营筛选</h3>
-            <button class="mode-btn camp-btn active" data-camp="all">全部</button>
-            <button class="mode-btn camp-btn" data-camp="astronaut">🚀 宇航员</button>
-            <button class="mode-btn camp-btn" data-camp="invader">👾 入侵者</button>
-            <button class="mode-btn camp-btn" data-camp="neutral">⚖️ 中立</button>
-        </div>
-        <div class="main">
-            <div class="header">
-                <h1>📊 身份胜率与参与率趋势分析</h1>
-                <p id="dateRange">日期范围：加载中...</p>
-            </div>
-            <div class="identity-selector">
-                <div class="selector-header">
-                    <h3>🎯 身份选择</h3>
-                    <div class="btn-group">
-                        <button class="btn" id="selectAll">全选</button>
-                        <button class="btn" id="clearAll">清除</button>
-                        <button class="btn" id="toggleTrend">趋势线: 关</button>
-                    </div>
-                </div>
-                <div class="identity-list" id="identityList"></div>
-            </div>
-            <div class="chart-grid">
-                <div class="chart-box">
-                    <div class="chart-header">
-                        <h3>📈 胜率趋势</h3>
-                    </div>
-                    <div class="chart-wrapper"><canvas id="winRateChart"></canvas></div>
-                    <div class="trend-info">
-                        <h4>📉 胜率趋势汇总 <span id="winSlopeInfo"></span></h4>
-                        <div class="trend-list" id="winTrendList"></div>
-                        <div class="legend-note">⬆ 上升 >0.3%/天 | ⬇ 下降 <-0.3%/天 | ➡ 平稳</div>
-                    </div>
-                </div>
-                <div class="chart-box">
-                    <div class="chart-header">
-                        <h3>📊 参与率趋势</h3>
-                    </div>
-                    <div class="chart-wrapper"><canvas id="pickRateChart"></canvas></div>
-                    <div class="trend-info">
-                        <h4>📊 参与率趋势汇总 <span id="pickSlopeInfo"></span></h4>
-                        <div class="trend-list" id="pickTrendList"></div>
-                        <div class="legend-note">⬆ 上升 >0.3%/天 | ⬇ 下降 <-0.3%/天 | ➡ 平稳</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script>
-    let fullData = {};
-    let currentMode = '诸神排位';
-    let currentCamp = 'all';
-    let selectedIdentities = [];
-    let showTrend = false;
-    let winRateChart = null;
-    let pickRateChart = null;
-    
-    const campNames = { astronaut: '🚀宇航员', invader: '👾入侵者', neutral: '⚖️中立' };
-    
-    async function loadData() {
-        const resp = await fetch('./data.json');
-        fullData = await resp.json();
-        initApp();
     }
+    roles.sort((a, b) => b.score - a.score);
+    const top = roles.slice(0, 20);
+    return {
+        labels: top.map(r => r.name),
+        datasets: [{
+            label: '胜率%',
+            data: top.map(r => r.winRate),
+            backgroundColor: top.map(r => r.tier.color + '99')
+        }]
+    };
+}
+
+function updateLineChart(mode) {
+    const select = document.getElementById('multi-' + mode);
+    const selected = Array.from(select.selectedOptions).map(o => o.value);
+    if (!selected.length) return;
     
-    function getDates(mode) {
-        const allDates = Object.keys(fullData[mode] || {}).sort();
-        if (allDates.length === 0) return [];
-        // Only return dates that actually have data (max 7)
-        return allDates.slice(-7);
-    }
+    const chartData = buildLineData(mode, selected);
+    if (lineCharts[mode]) lineCharts[mode].destroy();
     
-    function getIdentities(mode, camp) {
-        const dates = getDates(mode);
-        const identities = {};
-        for (const date of dates) {
-            for (const c of ['astronaut', 'invader', 'neutral']) {
-                if (camp !== 'all' && c !== camp) continue;
-                const entries = fullData[mode][date]?.[c] || [];
-                for (const entry of entries) {
-                    const name = entry[0];
-                    if (!identities[name]) {
-                        identities[name] = { name, camp: c, winRates: [], pickRates: [], dates: [] };
-                    }
-                    identities[name].winRates.push(entry[1]);
-                    identities[name].pickRates.push(entry[2]);
-                    identities[name].dates.push(date);
-                }
+    const ctx = document.getElementById('line-' + mode).getContext('2d');
+    lineCharts[mode] = new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'nearest', intersect: false },
+            plugins: { legend: { labels: { color: '#e8eaf0', boxWidth: 12 } } },
+            scales: {
+                x: { ticks: { color: '#7a8aad' }, grid: { color: '#2a3a5a' } },
+                y: { ticks: { color: '#7a8aad', callback: v => v + '%' }, grid: { color: '#2a3a5a' } }
             }
         }
-        return Object.values(identities);
-    }
+    });
+}
+
+function updateBarChart(mode) {
+    const dateSelect = document.getElementById('bar-date-' + mode);
+    const date = dateSelect.value;
+    const chartData = buildBarDataFor(mode, date);
     
-    function linearRegression(yValues) {
-        const n = yValues.length;
-        if (n < 2) return { slope: 0, intercept: yValues[0] || 0 };
-        const xValues = yValues.map((_, i) => i);
-        const sumX = xValues.reduce((a, b) => a + b, 0);
-        const sumY = yValues.reduce((a, b) => a + b, 0);
-        const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
-        const sumXX = xValues.reduce((sum, x) => sum + x * x, 0);
-        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-        const intercept = (sumY - slope * sumX) / n;
-        return { slope, intercept };
-    }
+    if (barCharts[mode]) barCharts[mode].destroy();
     
-    function buildDatasets(selected) {
-        const colors = ['#e94560', '#4ade80', '#fbbf24', '#60a5fa', '#f472b6', '#a78bfa', '#34d399', '#fb923c', '#818cf8', '#fb7185'];
-        const dashColors = ['#ff8a9a', '#7deda0', '#fcd34d', '#93c5fd', '#f9a8d4', '#c4b5fd', '#6ee7b7', '#fdba74', '#a5b4fc', '#fda4af'];
-        
-        const datasets = [];
-        selected.forEach((id, idx) => {
-            const color = colors[idx % colors.length];
-            const dashColor = dashColors[idx % dashColors.length];
-            const reg = linearRegression(id.winRates);
-            const trendLine = id.winRates.map((_, i) => reg.slope * i + reg.intercept);
-            
-            // Main line
-            datasets.push({
-                label: id.name,
-                data: id.winRates,
-                borderColor: color,
-                backgroundColor: color + '20',
-                borderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                tension: 0.3,
-                _slope: reg.slope,
-                _trendData: trendLine
-            });
-            
-            // Trend line (dashed) - only if showTrend is true
-            if (showTrend) {
-                datasets.push({
-                    label: id.name + ' (趋势线)',
-                    data: trendLine,
-                    borderColor: dashColor,
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    tension: 0,
-                    _slope: reg.slope
-                });
+    const ctx = document.getElementById('bar-' + mode).getContext('2d');
+    barCharts[mode] = new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#7a8aad', maxRotation: 45 }, grid: { color: '#2a3a5a' } },
+                y: { ticks: { color: '#7a8aad', callback: v => v + '%' }, grid: { color: '#2a3a5a' } }
             }
-        });
-        return datasets;
+        }
+    });
+}
+
+function showDetail(mode, date, name) {
+    const detail = document.getElementById('detail-' + mode);
+    
+    let roleData = null;
+    for (const f of ['astronaut', 'invader', 'neutral']) {
+        const e = (allData[mode]?.[date]?.[f] || []).find(x => x[0] === name);
+        if (e) {
+            const score = calcScore(e[1], e[2], mode, f);
+            const tier = getTier(score);
+            roleData = { name: e[0], faction: f, winRate: e[1], pickRate: e[2], score, tier };
+            break;
+        }
     }
     
-    function buildPickDatasets(selected) {
-        const colors = ['#e94560', '#4ade80', '#fbbf24', '#60a5fa', '#f472b6', '#a78bfa', '#34d399', '#fb923c', '#818cf8', '#fb7185'];
-        const dashColors = ['#ff8a9a', '#7deda0', '#fcd34d', '#93c5fd', '#f9a8d4', '#c4b5fd', '#6ee7b7', '#fdba74', '#a5b4fc', '#fda4af'];
-        
-        const datasets = [];
-        selected.forEach((id, idx) => {
-            const color = colors[idx % colors.length];
-            const dashColor = dashColors[idx % dashColors.length];
-            const reg = linearRegression(id.pickRates);
-            const trendLine = id.pickRates.map((_, i) => reg.slope * i + reg.intercept);
-            
-            datasets.push({
-                label: id.name,
-                data: id.pickRates,
-                borderColor: color,
-                backgroundColor: color + '20',
-                borderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                tension: 0.3,
-                _slope: reg.slope,
-                _trendData: trendLine
-            });
-            
-            if (showTrend) {
-                datasets.push({
-                    label: id.name + ' (趋势线)',
-                    data: trendLine,
-                    borderColor: dashColor,
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    tension: 0,
-                    _slope: reg.slope
-                });
-            }
-        });
-        return datasets;
+    if (!roleData) return;
+    
+    // Find previous
+    const dates = Object.keys(allData[mode] || {}).sort();
+    const idx = dates.indexOf(date);
+    let prevWR = null, wrChange = null;
+    if (idx > 0) {
+        for (const f of ['astronaut', 'invader', 'neutral']) {
+            const e = (allData[mode]?.[dates[idx-1]]?.[f] || []).find(x => x[0] === name);
+            if (e) { prevWR = e[1]; break; }
+        }
+    }
+    if (prevWR !== null) wrChange = (roleData.winRate - prevWR).toFixed(1);
+    
+    let analysis = roleData.name + '在' + modeNames[mode] + '中表现为' + roleData.tier.tier + roleData.tier.label + '角色，胜率' + roleData.winRate + '%，登场率' + roleData.pickRate + '%，综合分' + roleData.score.toFixed(2);
+    if (wrChange !== null) {
+        analysis += '，较上期' + (parseFloat(wrChange) >= 0 ? '上升' : '下降') + Math.abs(wrChange) + '%';
     }
     
-    function renderCharts() {
-        const dates = getDates(currentMode);
-        const identities = getIdentities(currentMode, currentCamp);
-        const selected = identities.filter(i => selectedIdentities.includes(i.name));
-        
-        if (winRateChart) winRateChart.destroy();
-        if (pickRateChart) pickRateChart.destroy();
-        
-        const winCtx = document.getElementById('winRateChart').getContext('2d');
-        winRateChart = new Chart(winCtx, {
-            type: 'line',
-            data: { labels: dates, datasets: buildDatasets(selected) },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { color: '#aaa', boxWidth: 12, padding: 8, font: { size: 11 } } 
-                    },
-                    tooltip: {
-                        backgroundColor: '#16213e', 
-                        titleColor: '#fff', 
-                        bodyColor: '#aaa',
-                        borderColor: '#0f3460', 
-                        borderWidth: 1
-                    }
-                },
-                scales: {
-                    x: { grid: { color: '#0f3460' }, ticks: { color: '#888' } },
-                    y: { grid: { color: '#0f3460' }, ticks: { color: '#888', callback: v => v + '%' } }
-                }
-            }
-        });
-        
-        const pickCtx = document.getElementById('pickRateChart').getContext('2d');
-        pickRateChart = new Chart(pickCtx, {
-            type: 'line',
-            data: { labels: dates, datasets: buildPickDatasets(selected) },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { color: '#aaa', boxWidth: 12, padding: 8, font: { size: 11 } } 
-                    },
-                    tooltip: {
-                        backgroundColor: '#16213e', 
-                        titleColor: '#fff', 
-                        bodyColor: '#aaa',
-                        borderColor: '#0f3460', 
-                        borderWidth: 1
-                    }
-                },
-                scales: {
-                    x: { grid: { color: '#0f3460' }, ticks: { color: '#888' } },
-                    y: { grid: { color: '#0f3460' }, ticks: { color: '#888', callback: v => v + '%' } }
-                }
-            }
-        });
-        
-        // Update trend lists
-        let winTrendHTML = '';
-        let upCount = 0, downCount = 0, stableCount = 0;
-        selected.forEach(id => {
-            const reg = linearRegression(id.winRates);
-            const slope = reg.slope;
-            if (slope > 0.3) upCount++;
-            else if (slope < -0.3) downCount++;
-            else stableCount++;
-        });
-        document.getElementById('winSlopeInfo').textContent = `(↑${upCount} ↓${downCount} →${stableCount})`;
-        
-        selected.forEach(id => {
-            const reg = linearRegression(id.winRates);
-            const slope = reg.slope;
-            const cls = slope > 0.3 ? 'trend-up' : slope < -0.3 ? 'trend-down' : 'trend-stable';
-            const icon = slope > 0.3 ? '⬆' : slope < -0.3 ? '⬇' : '➡';
-            winTrendHTML += `<div class="trend-item"><span class="trend-name">${id.name}</span><span class="${cls}">${icon} ${slope > 0 ? '+' : ''}${slope.toFixed(2)}%/天</span></div>`;
-        });
-        document.getElementById('winTrendList').innerHTML = winTrendHTML || '<div style="color:#666">请先选择身份</div>';
-        
-        let pickTrendHTML = '';
-        upCount = 0; downCount = 0; stableCount = 0;
-        selected.forEach(id => {
-            const reg = linearRegression(id.pickRates);
-            const slope = reg.slope;
-            if (slope > 0.3) upCount++;
-            else if (slope < -0.3) downCount++;
-            else stableCount++;
-        });
-        document.getElementById('pickSlopeInfo').textContent = `(↑${upCount} ↓${downCount} →${stableCount})`;
-        
-        selected.forEach(id => {
-            const reg = linearRegression(id.pickRates);
-            const slope = reg.slope;
-            const cls = slope > 0.3 ? 'trend-up' : slope < -0.3 ? 'trend-down' : 'trend-stable';
-            const icon = slope > 0.3 ? '⬆' : slope < -0.3 ? '⬇' : '➡';
-            pickTrendHTML += `<div class="trend-item"><span class="trend-name">${id.name}</span><span class="${cls}">${icon} ${slope > 0 ? '+' : ''}${slope.toFixed(2)}%/天</span></div>`;
-        });
-        document.getElementById('pickTrendList').innerHTML = pickTrendHTML || '<div style="color:#666">请先选择身份</div>';
+    detail.innerHTML = '<div class="detail-header"><span class="detail-name">' + roleData.name + '</span><span class="detail-faction">' + factionNames[roleData.faction] + '</span><span class="tier-badge" style="background:' + roleData.tier.color + '22;color:' + roleData.tier.color + '">' + roleData.tier.tier + ' ' + roleData.tier.label + '</span></div><div class="detail-metrics"><div class="metric"><div class="metric-value">' + roleData.winRate + '%</div><div class="metric-label">胜率</div></div><div class="metric"><div class="metric-value">' + roleData.pickRate + '%</div><div class="metric-label">登场率</div></div><div class="metric"><div class="metric-value" style="color:' + roleData.tier.color + '">' + roleData.score.toFixed(2) + '</div><div class="metric-label">综合分</div></div><div class="metric"><div class="metric-value">' + (wrChange !== null ? (parseFloat(wrChange) >= 0 ? '+' : '') + wrChange + '%' : '-') + '</div><div class="metric-label">较上期</div></div></div><div class="detail-analysis">' + analysis + '</div>';
+    detail.classList.add('active');
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+    for (const mode of Object.keys(modeNames)) {
+        updateLineChart(mode);
+        updateBarChart(mode);
     }
-    
-    function renderIdentityList() {
-        const identities = getIdentities(currentMode, currentCamp);
-        const listEl = document.getElementById('identityList');
-        listEl.innerHTML = '';
-        
-        const byCamp = { astronaut: [], invader: [], neutral: [] };
-        identities.forEach(id => byCamp[id.camp].push(id));
-        
-        const campOrder = currentCamp === 'all' ? ['astronaut', 'invader', 'neutral'] : [currentCamp];
-        
-        campOrder.forEach(camp => {
-            byCamp[camp].forEach(id => {
-                const div = document.createElement('div');
-                div.style.cssText = 'display:flex;align-items:center;margin-bottom:4px;';
-                
-                const cb = document.createElement('input');
-                cb.type = 'checkbox';
-                cb.className = 'identity-checkbox';
-                cb.id = 'id_' + id.name;
-                cb.value = id.name;
-                if (selectedIdentities.includes(id.name)) cb.checked = true;
-                
-                const label = document.createElement('label');
-                label.className = 'identity-label';
-                label.htmlFor = 'id_' + id.name;
-                label.textContent = campNames[camp].replace(/\S+/, '') + ' ' + id.name;
-                
-                cb.addEventListener('change', () => {
-                    if (cb.checked) {
-                        if (!selectedIdentities.includes(id.name)) selectedIdentities.push(id.name);
-                    } else {
-                        selectedIdentities = selectedIdentities.filter(n => n !== id.name);
-                    }
-                    renderCharts();
-                });
-                
-                div.appendChild(cb);
-                div.appendChild(label);
-                listEl.appendChild(div);
-            });
-        });
-    }
-    
-    function initApp() {
-        const dates = getDates(currentMode);
-        document.getElementById('dateRange').textContent = `日期范围：${dates[0]} 至 ${dates[dates.length-1]}（共${dates.length}天）`;
-        
-        document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentMode = btn.dataset.mode;
-                selectedIdentities = [];
-                const newDates = getDates(currentMode);
-                document.getElementById('dateRange').textContent = `日期范围：${newDates[0]} 至 ${newDates[newDates.length-1]}（共${newDates.length}天）`;
-                renderIdentityList();
-                renderCharts();
-            });
-        });
-        
-        document.querySelectorAll('.mode-btn[data-camp]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.mode-btn[data-camp]').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentCamp = btn.dataset.camp;
-                selectedIdentities = [];
-                renderIdentityList();
-                renderCharts();
-            });
-        });
-        
-        document.getElementById('selectAll').addEventListener('click', () => {
-            const cbs = document.querySelectorAll('.identity-checkbox');
-            cbs.forEach(cb => { cb.checked = true; if (!selectedIdentities.includes(cb.value)) selectedIdentities.push(cb.value); });
-            renderCharts();
-        });
-        
-        document.getElementById('clearAll').addEventListener('click', () => {
-            selectedIdentities = [];
-            document.querySelectorAll('.identity-checkbox').forEach(cb => cb.checked = false);
-            renderCharts();
-        });
-        
-        document.getElementById('toggleTrend').addEventListener('click', () => {
-            showTrend = !showTrend;
-            const btn = document.getElementById('toggleTrend');
-            btn.textContent = '趋势线: ' + (showTrend ? '开' : '关');
-            btn.classList.toggle('active', showTrend);
-            renderCharts();
-        });
-        
-        renderIdentityList();
-        renderCharts();
-    }
-    
-    loadData();
-    </script>
-</body>
-</html>
+});
+</script></body></html>
