@@ -1,1627 +1,1663 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Identity Win Rate Analysis</title>
+<html><head><meta charset="UTF-8"><title>Identity 胜率分析</title>
 <style>
-body { background: #0f1420; color: #fff; font-family: sans-serif; padding: 20px; }
-h1 { text-align: center; color: #4ade80; }
-h2 { color: #60a5fa; border-bottom: 1px solid #333; padding-bottom: 8px; }
-.date-info { text-align: center; color: #888; margin-bottom: 30px; }
-.changes { background: #151b2e; border-radius: 12px; padding: 20px; margin-bottom: 30px; }
-.change-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #222; }
-.change-item:last-child { border-bottom: none; }
-.role-name { font-weight: bold; min-width: 120px; }
-.role-mode { color: #888; font-size: 14px; min-width: 150px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1420; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+.header { text-align: center; padding: 20px 0; }
+.header h1 { color: #4ade80; font-size: 28px; margin-bottom: 8px; }
+.header .dates { color: #888; font-size: 14px; }
+.mode-section { background: #151b2e; border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+.mode-title { font-size: 20px; font-weight: 700; color: #60a5fa; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+.mode-title .mode-badge { background: #1e3a5f; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #93c5fd; }
+.ai-summary { background: #1a2234; border-left: 3px solid #4ade80; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 8px 8px 0; color: #d1d5db; line-height: 1.6; font-size: 14px; }
+.tier-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.tier-table th { background: #1e293b; padding: 10px 12px; text-align: left; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+.tier-table td { padding: 10px 12px; border-bottom: 1px solid #1e293b; font-size: 14px; }
+.tier-table tr:hover { background: #1e293b; cursor: pointer; }
+.tier-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+.score-bar { display: inline-block; width: 60px; height: 6px; background: #2d3748; border-radius: 3px; vertical-align: middle; margin-left: 8px; overflow: hidden; }
+.score-fill { display: block; height: 100%; border-radius: 3px; }
+.role-cell { font-weight: 600; }
 .positive { color: #4ade80; }
 .negative { color: #f87171; }
 .neutral { color: #fbbf24; }
-.change-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 10px; }
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-th { background: #1e293b; padding: 12px; text-align: left; }
-td { padding: 10px; border-bottom: 1px solid #222; }
-tr:hover { background: #1e293b; }
 .up { color: #4ade80; }
 .down { color: #f87171; }
+.changes-section { margin-top: 16px; }
+.changes-title { font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
+.change-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
+.change-tag.up { background: rgba(74,222,128,0.15); color: #4ade80; }
+.change-tag.down { background: rgba(248,113,113,0.15); color: #f87171; }
+.role-detail { display: none; background: #1a2234; border-radius: 12px; padding: 16px; margin-top: 12px; }
+.role-detail.active { display: block; }
+.detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.detail-name { font-size: 18px; font-weight: 700; }
+.detail-faction { font-size: 12px; color: #888; background: #2d3748; padding: 2px 8px; border-radius: 4px; }
+.detail-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+.metric { background: #151b2e; padding: 12px; border-radius: 8px; text-align: center; }
+.metric-value { font-size: 24px; font-weight: 700; }
+.metric-label { font-size: 11px; color: #888; margin-top: 4px; }
+.detail-analysis { background: #0f1420; padding: 12px; border-radius: 8px; font-size: 13px; color: #d1d5db; line-height: 1.6; border-left: 3px solid #60a5fa; }
+.detail-change { font-size: 12px; margin-top: 8px; color: #888; }
+.filter-bar { margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filter-bar input { background: #1e293b; border: 1px solid #2d3748; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 14px; width: 200px; }
+.filter-bar select { background: #1e293b; border: 1px solid #2d3748; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 14px; }
+.filter-bar button { background: #1e3a5f; border: none; border-radius: 8px; padding: 8px 16px; color: #93c5fd; font-size: 14px; cursor: pointer; }
+.filter-bar button.active { background: #3b82f6; color: #fff; }
+.legend { display: flex; gap: 16px; font-size: 12px; color: #888; margin-bottom: 16px; }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 </style></head><body>
+<div class="header">
 <h1>🎮 Identity 胜率分析</h1>
-<div class="date-info">Gods Ranking: 2026-04-22<br>Special Ops Solo: 2026-04-22<br>Peak Tournament: 2026-04-22<br></div><h2>📊 异动摘要 (04-23早→下午 显著变化)</h2>
-<div class="changes"><div class="change-item">
-            <span class="role-name">奶龙</span>
-            <span class="role-mode">[特别行动单人排位]</span>
-            <span class="negative">胜率 8.1% <span class="change-badge">-24.1%</span></span>
-            <span class="positive">登场 3.8% <span class="change-badge">+3.2%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">蛇精</span>
-            <span class="role-mode">[特别行动单人排位]</span>
-            <span class="negative">胜率 30.9% <span class="change-badge">-20.5%</span></span>
-            <span class="positive">登场 0.9% <span class="change-badge">+0.8%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">时间刺客</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="positive">胜率 54% <span class="change-badge">+18.8%</span></span>
-            <span class="positive">登场 11.2% <span class="change-badge">+1.9%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">侦探</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="negative">胜率 38.6% <span class="change-badge">-18%</span></span>
-            <span class="positive">登场 23.6% <span class="change-badge">+5.4%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">伪人</span>
-            <span class="role-mode">[特别行动单人排位]</span>
-            <span class="negative">胜率 29% <span class="change-badge">-17.9%</span></span>
-            <span class="positive">登场 3.7% <span class="change-badge">+1.6%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">市长</span>
-            <span class="role-mode">[特别行动单人排位]</span>
-            <span class="positive">胜率 53% <span class="change-badge">+17.8%</span></span>
-            <span class="positive">登场 7.8% <span class="change-badge">+5.8%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">预言家</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="negative">胜率 38.5% <span class="change-badge">-16.1%</span></span>
-            <span class="positive">登场 22.6% <span class="change-badge">+3.3%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">国王</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="negative">胜率 33.6% <span class="change-badge">-15.9%</span></span>
-            <span class="positive">登场 21.6% <span class="change-badge">+0.9%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">黑客</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="negative">胜率 35.5% <span class="change-badge">-14.8%</span></span>
-            <span class="positive">登场 22.6% <span class="change-badge">+3.2%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">孙悟空</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="positive">胜率 37.9% <span class="change-badge">+14.5%</span></span>
-            <span class="negative">登场 5% <span class="change-badge">-1.3%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">内鬼</span>
-            <span class="role-mode">[特别行动单人排位]</span>
-            <span class="negative">胜率 23.4% <span class="change-badge">-14%</span></span>
-            <span class="negative">登场 1.8% <span class="change-badge">-3.8%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">幻影</span>
-            <span class="role-mode">[特别行动单人排位]</span>
-            <span class="positive">胜率 23.2% <span class="change-badge">+14%</span></span>
-            <span class="positive">登场 15.3% <span class="change-badge">+13.6%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">老兵</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="negative">胜率 42.7% <span class="change-badge">-13.8%</span></span>
-            <span class="positive">登场 23.3% <span class="change-badge">+2.4%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">闪光弹</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="positive">胜率 45.8% <span class="change-badge">+13.7%</span></span>
-            <span class="negative">登场 6.2% <span class="change-badge">-1.7%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">丘比特</span>
-            <span class="role-mode">[特别行动单人排位]</span>
-            <span class="negative">胜率 43.4% <span class="change-badge">-13.6%</span></span>
-            <span class="positive">登场 17.1% <span class="change-badge">+15.3%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">忍者</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="positive">胜率 42.7% <span class="change-badge">+13.6%</span></span>
-            <span class="positive">登场 9.9% <span class="change-badge">+1.5%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">狙击手</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="positive">胜率 43.7% <span class="change-badge">+13.3%</span></span>
-            <span class="negative">登场 6.7% <span class="change-badge">-0.4%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">清洁工</span>
-            <span class="role-mode">[特别行动单人排位]</span>
-            <span class="negative">胜率 27.4% <span class="change-badge">-12.8%</span></span>
-            <span class="positive">登场 8.5% <span class="change-badge">+1.8%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">忍者</span>
-            <span class="role-mode">[特别行动单人排位]</span>
-            <span class="negative">胜率 30% <span class="change-badge">-12.6%</span></span>
-            <span class="positive">登场 2.6% <span class="change-badge">+0.5%</span></span>
-        </div><div class="change-item">
-            <span class="role-name">哪吒</span>
-            <span class="role-mode">[巅峰赛]</span>
-            <span class="negative">胜率 34.3% <span class="change-badge">-12.6%</span></span>
-            <span class="positive">登场 20.8% <span class="change-badge">+1.6%</span></span>
-        </div></div><h2>Gods Ranking - 2026-04-22</h2>
-    <div class="table-wrap">
-    <table>
-    <tr><th>角色</th><th>阵营</th><th>胜率</th><th>变化</th><th>登场率</th><th>变化</th></tr><tr>
-            <td>柯南</td>
-            <td>Astronaut</td>
-            <td class="down">56.9%</td>
-            <td class="down">-1.5%</td>
-            <td class="">5.4%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>武士</td>
-            <td>Astronaut</td>
-            <td class="down">53.2%</td>
-            <td class="down">-2.2%</td>
-            <td class="down">2.1%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>时间之主</td>
-            <td>Astronaut</td>
-            <td class="down">53.1%</td>
-            <td class="down">-0.3%</td>
-            <td class="down">2.4%</td>
-            <td class="down">-0.4%</td>
-        </tr><tr>
-            <td>毛利兰</td>
-            <td>Astronaut</td>
-            <td class="down">52.9%</td>
-            <td class="down">-1%</td>
-            <td class="down">0.7%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>葫芦兄弟</td>
-            <td>Astronaut</td>
-            <td class="down">52.8%</td>
-            <td class="down">-2.5%</td>
-            <td class="down">8.4%</td>
-            <td class="down">-0.8%</td>
-        </tr><tr>
-            <td>诱饵</td>
-            <td>Astronaut</td>
-            <td class="up">52.1%</td>
-            <td class="up">+0.4%</td>
-            <td class="down">1.7%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>逍遥</td>
-            <td>Astronaut</td>
-            <td class="up">52%</td>
-            <td class="up">+2.8%</td>
-            <td class="down">0.6%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>国王</td>
-            <td>Astronaut</td>
-            <td class="up">51.9%</td>
-            <td class="up">+2.9%</td>
-            <td class="up">1.5%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>勇者</td>
-            <td>Astronaut</td>
-            <td class="down">51.1%</td>
-            <td class="down">-1.9%</td>
-            <td class="up">1.5%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>卧底</td>
-            <td>Astronaut</td>
-            <td class="down">50.8%</td>
-            <td class="down">-1.3%</td>
-            <td class="down">0.9%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>法官</td>
-            <td>Astronaut</td>
-            <td class="up">50.4%</td>
-            <td class="up">+0.5%</td>
-            <td class="up">1.3%</td>
-            <td class="up">+0.2%</td>
-        </tr><tr>
-            <td>换票师</td>
-            <td>Astronaut</td>
-            <td class="up">49%</td>
-            <td class="up">+3.6%</td>
-            <td class="up">2.2%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>哪吒</td>
-            <td>Astronaut</td>
-            <td class="down">48.3%</td>
-            <td class="down">-1.7%</td>
-            <td class="down">3.4%</td>
-            <td class="down">-0.4%</td>
-        </tr><tr>
-            <td>警长</td>
-            <td>Astronaut</td>
-            <td class="down">48.1%</td>
-            <td class="down">-1%</td>
-            <td class="down">33.3%</td>
-            <td class="down">-1%</td>
-        </tr><tr>
-            <td>考古学家</td>
-            <td>Astronaut</td>
-            <td class="down">48.1%</td>
-            <td class="down">-4.9%</td>
-            <td class="">0.7%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>单面人</td>
-            <td>Astronaut</td>
-            <td class="up">48%</td>
-            <td class="up">+0.7%</td>
-            <td class="up">9.2%</td>
-            <td class="up">+0.4%</td>
-        </tr><tr>
-            <td>灰原哀</td>
-            <td>Astronaut</td>
-            <td class="down">47.3%</td>
-            <td class="down">-10.4%</td>
-            <td class="">0.5%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>光之巨人</td>
-            <td>Astronaut</td>
-            <td class="down">47%</td>
-            <td class="down">-0.3%</td>
-            <td class="">1.9%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>狱卒</td>
-            <td>Astronaut</td>
-            <td class="down">46.6%</td>
-            <td class="down">-3.8%</td>
-            <td class="down">1.1%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>守望者</td>
-            <td>Astronaut</td>
-            <td class="up">46.3%</td>
-            <td class="up">+1.1%</td>
-            <td class="">8.3%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>船员</td>
-            <td>Astronaut</td>
-            <td class="down">45.1%</td>
-            <td class="down">-0.7%</td>
-            <td class="down">199.9%</td>
-            <td class="down">-10.5%</td>
-        </tr><tr>
-            <td>老兵</td>
-            <td>Astronaut</td>
-            <td class="down">43.3%</td>
-            <td class="down">-2.4%</td>
-            <td class="down">7.9%</td>
-            <td class="down">-1.1%</td>
-        </tr><tr>
-            <td>医生</td>
-            <td>Astronaut</td>
-            <td class="down">43.1%</td>
-            <td class="down">-0.5%</td>
-            <td class="up">8.9%</td>
-            <td class="up">+0.3%</td>
-        </tr><tr>
-            <td>情报员</td>
-            <td>Astronaut</td>
-            <td class="down">42.7%</td>
-            <td class="down">-0.7%</td>
-            <td class="down">3.7%</td>
-            <td class="down">-0.4%</td>
-        </tr><tr>
-            <td>侦探</td>
-            <td>Astronaut</td>
-            <td class="down">41.7%</td>
-            <td class="down">-0.9%</td>
-            <td class="down">2.5%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>魔术师</td>
-            <td>Astronaut</td>
-            <td class="down">41.5%</td>
-            <td class="down">-6.6%</td>
-            <td class="down">1.5%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>守卫</td>
-            <td>Astronaut</td>
-            <td class="down">41.4%</td>
-            <td class="down">-4.2%</td>
-            <td class="down">3%</td>
-            <td class="down">-0.3%</td>
-        </tr><tr>
-            <td>猎人</td>
-            <td>Astronaut</td>
-            <td class="up">40.5%</td>
-            <td class="up">+1%</td>
-            <td class="down">3.7%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>预言家</td>
-            <td>Astronaut</td>
-            <td class="up">40.4%</td>
-            <td class="up">+0.5%</td>
-            <td class="down">13.1%</td>
-            <td class="down">-0.9%</td>
-        </tr><tr>
-            <td>管道工</td>
-            <td>Astronaut</td>
-            <td class="up">40.3%</td>
-            <td class="up">+1.3%</td>
-            <td class="down">5.9%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>保安</td>
-            <td>Astronaut</td>
-            <td class="down">40.3%</td>
-            <td class="down">-4%</td>
-            <td class="down">2.5%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>黑客</td>
-            <td>Astronaut</td>
-            <td class="down">38.2%</td>
-            <td class="down">-1.5%</td>
-            <td class="down">6%</td>
-            <td class="down">-0.5%</td>
-        </tr><tr>
-            <td>工程师</td>
-            <td>Astronaut</td>
-            <td class="down">37.3%</td>
-            <td class="down">-0.9%</td>
-            <td class="down">6.1%</td>
-            <td class="down">-0.5%</td>
-        </tr><tr>
-            <td>市长</td>
-            <td>Astronaut</td>
-            <td class="up">37.3%</td>
-            <td class="up">+2.7%</td>
-            <td class="down">1.8%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>蛇精</td>
-            <td>Invader</td>
-            <td class="up">60.6%</td>
-            <td class="up">+3.7%</td>
-            <td class="down">0.1%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>教父</td>
-            <td>Invader</td>
-            <td class="up">52.4%</td>
-            <td class="up">+2.2%</td>
-            <td class="">4.6%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>女帝</td>
-            <td>Invader</td>
-            <td class="up">50.9%</td>
-            <td class="up">+4%</td>
-            <td class="up">1.4%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>收割者</td>
-            <td>Invader</td>
-            <td class="down">50.8%</td>
-            <td class="down">-2%</td>
-            <td class="down">0.7%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>熊大熊二</td>
-            <td>Invader</td>
-            <td class="down">50.2%</td>
-            <td class="down">-2%</td>
-            <td class="down">0.7%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>赏金猎人</td>
-            <td>Invader</td>
-            <td class="up">48.2%</td>
-            <td class="up">+1.1%</td>
-            <td class="down">3%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>鬼新娘</td>
-            <td>Invader</td>
-            <td class="">48.1%</td>
-            <td class="">0%</td>
-            <td class="down">1.2%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>忍者</td>
-            <td>Invader</td>
-            <td class="up">47.6%</td>
-            <td class="up">+0.2%</td>
-            <td class="down">2.1%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>小黑</td>
-            <td>Invader</td>
-            <td class="up">47.3%</td>
-            <td class="up">+1.6%</td>
-            <td class="up">0.3%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>时间刺客</td>
-            <td>Invader</td>
-            <td class="up">46.5%</td>
-            <td class="up">+4%</td>
-            <td class="up">2.6%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>摄魂怪</td>
-            <td>Invader</td>
-            <td class="up">46.1%</td>
-            <td class="up">+0.7%</td>
-            <td class="down">5.2%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>吸血鬼</td>
-            <td>Invader</td>
-            <td class="up">45.6%</td>
-            <td class="up">+1.7%</td>
-            <td class="down">1.6%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>伪人</td>
-            <td>Invader</td>
-            <td class="down">44.4%</td>
-            <td class="down">-0.4%</td>
-            <td class="up">2.4%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>暗之巨人</td>
-            <td>Invader</td>
-            <td class="up">44.3%</td>
-            <td class="up">+0.3%</td>
-            <td class="up">1.1%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>双面人</td>
-            <td>Invader</td>
-            <td class="up">44.1%</td>
-            <td class="up">+0.5%</td>
-            <td class="down">13.3%</td>
-            <td class="down">-0.3%</td>
-        </tr><tr>
-            <td>欺诈师</td>
-            <td>Invader</td>
-            <td class="down">43.4%</td>
-            <td class="down">-1.5%</td>
-            <td class="down">1.5%</td>
-            <td class="down">-0.4%</td>
-        </tr><tr>
-            <td>清洁工</td>
-            <td>Invader</td>
-            <td class="down">42.6%</td>
-            <td class="down">-1.7%</td>
-            <td class="down">6.8%</td>
-            <td class="down">-0.6%</td>
-        </tr><tr>
-            <td>捣蛋鬼</td>
-            <td>Invader</td>
-            <td class="down">42.6%</td>
-            <td class="down">-0.9%</td>
-            <td class="">0.5%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>守夜人</td>
-            <td>Invader</td>
-            <td class="up">42.4%</td>
-            <td class="up">+7.6%</td>
-            <td class="down">1.7%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>狙击手</td>
-            <td>Invader</td>
-            <td class="up">41.9%</td>
-            <td class="up">+0.1%</td>
-            <td class="up">24.4%</td>
-            <td class="up">+0.2%</td>
-        </tr><tr>
-            <td>变色龙</td>
-            <td>Invader</td>
-            <td class="up">41.8%</td>
-            <td class="up">+1%</td>
-            <td class="up">36.2%</td>
-            <td class="up">+0.4%</td>
-        </tr><tr>
-            <td>女巫</td>
-            <td>Invader</td>
-            <td class="down">41.6%</td>
-            <td class="down">-4.9%</td>
-            <td class="down">4.2%</td>
-            <td class="down">-1.4%</td>
-        </tr><tr>
-            <td>收债人</td>
-            <td>Invader</td>
-            <td class="up">40.9%</td>
-            <td class="up">+4.8%</td>
-            <td class="">1%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>孙悟空</td>
-            <td>Invader</td>
-            <td class="up">40.8%</td>
-            <td class="up">+0.1%</td>
-            <td class="down">2.5%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>闪光弹</td>
-            <td>Invader</td>
-            <td class="up">40.6%</td>
-            <td class="up">+0.7%</td>
-            <td class="up">1.5%</td>
-            <td class="up">+0.2%</td>
-        </tr><tr>
-            <td>间谍</td>
-            <td>Invader</td>
-            <td class="down">39.7%</td>
-            <td class="down">-3.2%</td>
-            <td class="down">3.8%</td>
-            <td class="down">-0.4%</td>
-        </tr><tr>
-            <td>咒术师</td>
-            <td>Invader</td>
-            <td class="up">39.5%</td>
-            <td class="up">+1.5%</td>
-            <td class="down">4.7%</td>
-            <td class="down">-0.5%</td>
-        </tr><tr>
-            <td>内鬼</td>
-            <td>Invader</td>
-            <td class="">38.1%</td>
-            <td class="">0%</td>
-            <td class="">5.2%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>搬运工</td>
-            <td>Invader</td>
-            <td class="down">36.6%</td>
-            <td class="down">-5%</td>
-            <td class="down">1.1%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>幸存者</td>
-            <td>Neutral</td>
-            <td class="down">72.4%</td>
-            <td class="down">-1.6%</td>
-            <td class="down">5.5%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>墙头草</td>
-            <td>Neutral</td>
-            <td class="up">63.6%</td>
-            <td class="up">+3.2%</td>
-            <td class="down">1.3%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>丘比特</td>
-            <td>Neutral</td>
-            <td class="down">51.4%</td>
-            <td class="down">-2.7%</td>
-            <td class="down">2.3%</td>
-            <td class="down">-0.5%</td>
-        </tr><tr>
-            <td>小蜜蜂</td>
-            <td>Neutral</td>
-            <td class="down">46.5%</td>
-            <td class="down">-2.4%</td>
-            <td class="down">7%</td>
-            <td class="down">-0.4%</td>
-        </tr><tr>
-            <td>神子</td>
-            <td>Neutral</td>
-            <td class="up">31.7%</td>
-            <td class="up">+4.4%</td>
-            <td class="down">0.4%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>怪盗</td>
-            <td>Neutral</td>
-            <td class="up">28.2%</td>
-            <td class="up">+1.7%</td>
-            <td class="">1.1%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>奶龙</td>
-            <td>Neutral</td>
-            <td class="up">26.8%</td>
-            <td class="up">+5.1%</td>
-            <td class="">0.6%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>恶魔</td>
-            <td>Neutral</td>
-            <td class="down">25.7%</td>
-            <td class="down">-2.3%</td>
-            <td class="up">1.5%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>饕餮</td>
-            <td>Neutral</td>
-            <td class="up">19.5%</td>
-            <td class="up">+8.3%</td>
-            <td class="up">1.6%</td>
-            <td class="up">+0.2%</td>
-        </tr><tr>
-            <td>无面人</td>
-            <td>Neutral</td>
-            <td class="up">19.1%</td>
-            <td class="up">+1.2%</td>
-            <td class="up">2.5%</td>
-            <td class="up">+0.4%</td>
-        </tr><tr>
-            <td>大胃王</td>
-            <td>Neutral</td>
-            <td class="down">17.8%</td>
-            <td class="down">-0.1%</td>
-            <td class="down">9.3%</td>
-            <td class="down">-1.2%</td>
-        </tr><tr>
-            <td>小丑</td>
-            <td>Neutral</td>
-            <td class="up">16.3%</td>
-            <td class="up">+2.1%</td>
-            <td class="down">4.7%</td>
-            <td class="down">-0.6%</td>
-        </tr><tr>
-            <td>幻影</td>
-            <td>Neutral</td>
-            <td class="up">15.9%</td>
-            <td class="up">+11.6%</td>
-            <td class="up">2.3%</td>
-            <td class="up">+0.3%</td>
-        </tr><tr>
-            <td>怪兽</td>
-            <td>Neutral</td>
-            <td class="down">15.5%</td>
-            <td class="down">-1.5%</td>
-            <td class="up">16.2%</td>
-            <td class="up">+0.9%</td>
-        </tr><tr>
-            <td>焰火师</td>
-            <td>Neutral</td>
-            <td class="down">14.8%</td>
-            <td class="down">-5%</td>
-            <td class="down">4.3%</td>
-            <td class="down">-0.6%</td>
-        </tr></table></div><h2>Special Ops Solo - 2026-04-22</h2>
-    <div class="table-wrap">
-    <table>
-    <tr><th>角色</th><th>阵营</th><th>胜率</th><th>变化</th><th>登场率</th><th>变化</th></tr><tr>
-            <td>卧底</td>
-            <td>Astronaut</td>
-            <td class="up">57.1%</td>
-            <td class="up">+0.6%</td>
-            <td class="up">4.9%</td>
-            <td class="up">+4%</td>
-        </tr><tr>
-            <td>毛利兰</td>
-            <td>Astronaut</td>
-            <td class="up">57.1%</td>
-            <td class="up">+0.5%</td>
-            <td class="up">9.6%</td>
-            <td class="up">+9%</td>
-        </tr><tr>
-            <td>时间之主</td>
-            <td>Astronaut</td>
-            <td class="down">55.9%</td>
-            <td class="down">-5.2%</td>
-            <td class="up">19.5%</td>
-            <td class="up">+16.4%</td>
-        </tr><tr>
-            <td>逍遥</td>
-            <td>Astronaut</td>
-            <td class="up">55.5%</td>
-            <td class="up">+1.6%</td>
-            <td class="up">8.5%</td>
-            <td class="up">+8%</td>
-        </tr><tr>
-            <td>柯南</td>
-            <td>Astronaut</td>
-            <td class="down">55.2%</td>
-            <td class="down">-9.2%</td>
-            <td class="up">37.7%</td>
-            <td class="up">+33.3%</td>
-        </tr><tr>
-            <td>葫芦兄弟</td>
-            <td>Astronaut</td>
-            <td class="down">55%</td>
-            <td class="down">-5.4%</td>
-            <td class="up">54.4%</td>
-            <td class="up">+46.9%</td>
-        </tr><tr>
-            <td>灰原哀</td>
-            <td>Astronaut</td>
-            <td class="down">53.8%</td>
-            <td class="down">-2.9%</td>
-            <td class="up">8.1%</td>
-            <td class="up">+7.8%</td>
-        </tr><tr>
-            <td>法官</td>
-            <td>Astronaut</td>
-            <td class="down">53.8%</td>
-            <td class="down">-2.5%</td>
-            <td class="up">14.8%</td>
-            <td class="up">+13.8%</td>
-        </tr><tr>
-            <td>武士</td>
-            <td>Astronaut</td>
-            <td class="down">53.6%</td>
-            <td class="down">-3.1%</td>
-            <td class="up">19.3%</td>
-            <td class="up">+17.5%</td>
-        </tr><tr>
-            <td>守卫</td>
-            <td>Astronaut</td>
-            <td class="up">53.4%</td>
-            <td class="up">+8.4%</td>
-            <td class="up">4.7%</td>
-            <td class="up">+1.6%</td>
-        </tr><tr>
-            <td>光之巨人</td>
-            <td>Astronaut</td>
-            <td class="up">53.3%</td>
-            <td class="up">+3.9%</td>
-            <td class="up">34.9%</td>
-            <td class="up">+33.1%</td>
-        </tr><tr>
-            <td>考古学家</td>
-            <td>Astronaut</td>
-            <td class="down">53.1%</td>
-            <td class="down">-5.3%</td>
-            <td class="up">7.5%</td>
-            <td class="up">+7%</td>
-        </tr><tr>
-            <td>警长</td>
-            <td>Astronaut</td>
-            <td class="up">53%</td>
-            <td class="up">+2.1%</td>
-            <td class="up">72.5%</td>
-            <td class="up">+42.1%</td>
-        </tr><tr>
-            <td>市长</td>
-            <td>Astronaut</td>
-            <td class="up">53%</td>
-            <td class="up">+17.8%</td>
-            <td class="up">7.8%</td>
-            <td class="up">+5.8%</td>
-        </tr><tr>
-            <td>老兵</td>
-            <td>Astronaut</td>
-            <td class="up">52.8%</td>
-            <td class="up">+7.5%</td>
-            <td class="up">26.9%</td>
-            <td class="up">+19.2%</td>
-        </tr><tr>
-            <td>勇者</td>
-            <td>Astronaut</td>
-            <td class="down">52.6%</td>
-            <td class="down">-3%</td>
-            <td class="up">10.9%</td>
-            <td class="up">+9.5%</td>
-        </tr><tr>
-            <td>医生</td>
-            <td>Astronaut</td>
-            <td class="up">51.9%</td>
-            <td class="up">+6.3%</td>
-            <td class="up">27.6%</td>
-            <td class="up">+19.1%</td>
-        </tr><tr>
-            <td>守望者</td>
-            <td>Astronaut</td>
-            <td class="up">51.9%</td>
-            <td class="up">+6.1%</td>
-            <td class="up">15.1%</td>
-            <td class="up">+7.5%</td>
-        </tr><tr>
-            <td>国王</td>
-            <td>Astronaut</td>
-            <td class="down">51.9%</td>
-            <td class="down">-1.8%</td>
-            <td class="up">9.8%</td>
-            <td class="up">+8.7%</td>
-        </tr><tr>
-            <td>单面人</td>
-            <td>Astronaut</td>
-            <td class="up">51.8%</td>
-            <td class="up">+1.8%</td>
-            <td class="up">51.1%</td>
-            <td class="up">+43.4%</td>
-        </tr><tr>
-            <td>狱卒</td>
-            <td>Astronaut</td>
-            <td class="up">51.7%</td>
-            <td class="up">+3.2%</td>
-            <td class="up">9.8%</td>
-            <td class="up">+8.7%</td>
-        </tr><tr>
-            <td>诱饵</td>
-            <td>Astronaut</td>
-            <td class="down">51.7%</td>
-            <td class="down">-4.9%</td>
-            <td class="up">12.9%</td>
-            <td class="up">+11.6%</td>
-        </tr><tr>
-            <td>保安</td>
-            <td>Astronaut</td>
-            <td class="up">51.2%</td>
-            <td class="up">+6.2%</td>
-            <td class="up">4%</td>
-            <td class="up">+1.8%</td>
-        </tr><tr>
-            <td>管道工</td>
-            <td>Astronaut</td>
-            <td class="up">51.1%</td>
-            <td class="up">+6.9%</td>
-            <td class="up">6.4%</td>
-            <td class="up">+0.5%</td>
-        </tr><tr>
-            <td>换票师</td>
-            <td>Astronaut</td>
-            <td class="down">50.8%</td>
-            <td class="down">-2.2%</td>
-            <td class="up">17.4%</td>
-            <td class="up">+15.5%</td>
-        </tr><tr>
-            <td>黑客</td>
-            <td>Astronaut</td>
-            <td class="up">50.5%</td>
-            <td class="up">+9.1%</td>
-            <td class="up">6.5%</td>
-            <td class="up">+0.2%</td>
-        </tr><tr>
-            <td>预言家</td>
-            <td>Astronaut</td>
-            <td class="up">50.1%</td>
-            <td class="up">+7%</td>
-            <td class="up">20.8%</td>
-            <td class="up">+7.5%</td>
-        </tr><tr>
-            <td>工程师</td>
-            <td>Astronaut</td>
-            <td class="up">50%</td>
-            <td class="up">+10%</td>
-            <td class="up">14%</td>
-            <td class="up">+7.3%</td>
-        </tr><tr>
-            <td>猎人</td>
-            <td>Astronaut</td>
-            <td class="up">50%</td>
-            <td class="up">+7.9%</td>
-            <td class="up">12%</td>
-            <td class="up">+8.6%</td>
-        </tr><tr>
-            <td>哪吒</td>
-            <td>Astronaut</td>
-            <td class="down">49.9%</td>
-            <td class="down">-6.9%</td>
-            <td class="up">20.5%</td>
-            <td class="up">+17.5%</td>
-        </tr><tr>
-            <td>情报员</td>
-            <td>Astronaut</td>
-            <td class="up">48.9%</td>
-            <td class="up">+7.2%</td>
-            <td class="up">6.7%</td>
-            <td class="up">+3.1%</td>
-        </tr><tr>
-            <td>魔术师</td>
-            <td>Astronaut</td>
-            <td class="down">48.6%</td>
-            <td class="down">-0.4%</td>
-            <td class="up">9.1%</td>
-            <td class="up">+7.6%</td>
-        </tr><tr>
-            <td>侦探</td>
-            <td>Astronaut</td>
-            <td class="up">48.3%</td>
-            <td class="up">+3.2%</td>
-            <td class="up">8.4%</td>
-            <td class="up">+6.4%</td>
-        </tr><tr>
-            <td>船员</td>
-            <td>Astronaut</td>
-            <td class="down">45.4%</td>
-            <td class="down">-2.3%</td>
-            <td class="down">6.1%</td>
-            <td class="down">-183.3%</td>
-        </tr><tr>
-            <td>鬼新娘</td>
-            <td>Invader</td>
-            <td class="down">38.1%</td>
-            <td class="down">-3.4%</td>
-            <td class="up">5.1%</td>
-            <td class="up">+4%</td>
-        </tr><tr>
-            <td>教父</td>
-            <td>Invader</td>
-            <td class="down">37.6%</td>
-            <td class="down">-5.5%</td>
-            <td class="up">14.6%</td>
-            <td class="up">+11.7%</td>
-        </tr><tr>
-            <td>摄魂怪</td>
-            <td>Invader</td>
-            <td class="down">36.1%</td>
-            <td class="down">-5.1%</td>
-            <td class="up">17.1%</td>
-            <td class="up">+12.7%</td>
-        </tr><tr>
-            <td>双面人</td>
-            <td>Invader</td>
-            <td class="down">35.5%</td>
-            <td class="down">-2.2%</td>
-            <td class="up">35.8%</td>
-            <td class="up">+24.4%</td>
-        </tr><tr>
-            <td>收割者</td>
-            <td>Invader</td>
-            <td class="down">35.5%</td>
-            <td class="down">-2.3%</td>
-            <td class="up">6.5%</td>
-            <td class="up">+5.6%</td>
-        </tr><tr>
-            <td>女帝</td>
-            <td>Invader</td>
-            <td class="down">35.3%</td>
-            <td class="down">-1.9%</td>
-            <td class="up">5.4%</td>
-            <td class="up">+4.6%</td>
-        </tr><tr>
-            <td>熊大熊二</td>
-            <td>Invader</td>
-            <td class="down">34.4%</td>
-            <td class="down">-11.4%</td>
-            <td class="up">3.9%</td>
-            <td class="up">+3.3%</td>
-        </tr><tr>
-            <td>赏金猎人</td>
-            <td>Invader</td>
-            <td class="down">33.4%</td>
-            <td class="down">-7.3%</td>
-            <td class="up">15.3%</td>
-            <td class="up">+12.7%</td>
-        </tr><tr>
-            <td>时间刺客</td>
-            <td>Invader</td>
-            <td class="down">32.8%</td>
-            <td class="down">-8.4%</td>
-            <td class="up">5.9%</td>
-            <td class="up">+3.8%</td>
-        </tr><tr>
-            <td>吸血鬼</td>
-            <td>Invader</td>
-            <td class="down">32.4%</td>
-            <td class="down">-10%</td>
-            <td class="up">10.4%</td>
-            <td class="up">+9%</td>
-        </tr><tr>
-            <td>欺诈师</td>
-            <td>Invader</td>
-            <td class="down">31.3%</td>
-            <td class="down">-6.4%</td>
-            <td class="up">5.5%</td>
-            <td class="up">+4%</td>
-        </tr><tr>
-            <td>暗之巨人</td>
-            <td>Invader</td>
-            <td class="down">31%</td>
-            <td class="down">-5.9%</td>
-            <td class="up">4.1%</td>
-            <td class="up">+3.2%</td>
-        </tr><tr>
-            <td>蛇精</td>
-            <td>Invader</td>
-            <td class="down">30.9%</td>
-            <td class="down">-20.5%</td>
-            <td class="up">0.9%</td>
-            <td class="up">+0.8%</td>
-        </tr><tr>
-            <td>搬运工</td>
-            <td>Invader</td>
-            <td class="down">30.4%</td>
-            <td class="down">-9.2%</td>
-            <td class="up">2.1%</td>
-            <td class="up">+1%</td>
-        </tr><tr>
-            <td>间谍</td>
-            <td>Invader</td>
-            <td class="down">30%</td>
-            <td class="down">-9%</td>
-            <td class="up">5.1%</td>
-            <td class="up">+1.4%</td>
-        </tr><tr>
-            <td>忍者</td>
-            <td>Invader</td>
-            <td class="down">30%</td>
-            <td class="down">-12.6%</td>
-            <td class="up">2.6%</td>
-            <td class="up">+0.5%</td>
-        </tr><tr>
-            <td>狙击手</td>
-            <td>Invader</td>
-            <td class="down">29.2%</td>
-            <td class="down">-10.1%</td>
-            <td class="down">7.7%</td>
-            <td class="down">-17.8%</td>
-        </tr><tr>
-            <td>捣蛋鬼</td>
-            <td>Invader</td>
-            <td class="down">29.2%</td>
-            <td class="down">-8.7%</td>
-            <td class="up">3.3%</td>
-            <td class="up">+2.8%</td>
-        </tr><tr>
-            <td>伪人</td>
-            <td>Invader</td>
-            <td class="down">29%</td>
-            <td class="down">-17.9%</td>
-            <td class="up">3.7%</td>
-            <td class="up">+1.6%</td>
-        </tr><tr>
-            <td>闪光弹</td>
-            <td>Invader</td>
-            <td class="down">28.3%</td>
-            <td class="down">-9.1%</td>
-            <td class="up">2%</td>
-            <td class="up">+0.7%</td>
-        </tr><tr>
-            <td>变色龙</td>
-            <td>Invader</td>
-            <td class="down">27.9%</td>
-            <td class="down">-11.4%</td>
-            <td class="down">7.1%</td>
-            <td class="down">-32.1%</td>
-        </tr><tr>
-            <td>女巫</td>
-            <td>Invader</td>
-            <td class="down">27.8%</td>
-            <td class="down">-9.8%</td>
-            <td class="up">7.5%</td>
-            <td class="up">+4%</td>
-        </tr><tr>
-            <td>清洁工</td>
-            <td>Invader</td>
-            <td class="down">27.4%</td>
-            <td class="down">-12.8%</td>
-            <td class="up">8.5%</td>
-            <td class="up">+1.8%</td>
-        </tr><tr>
-            <td>小黑</td>
-            <td>Invader</td>
-            <td class="down">27%</td>
-            <td class="down">-12.4%</td>
-            <td class="up">1.2%</td>
-            <td class="up">+0.9%</td>
-        </tr><tr>
-            <td>孙悟空</td>
-            <td>Invader</td>
-            <td class="down">26.7%</td>
-            <td class="down">-9.8%</td>
-            <td class="up">2.9%</td>
-            <td class="up">+0.5%</td>
-        </tr><tr>
-            <td>收债人</td>
-            <td>Invader</td>
-            <td class="down">26.5%</td>
-            <td class="down">-6.5%</td>
-            <td class="up">5.5%</td>
-            <td class="up">+4.6%</td>
-        </tr><tr>
-            <td>咒术师</td>
-            <td>Invader</td>
-            <td class="down">26.3%</td>
-            <td class="down">-8%</td>
-            <td class="">5.3%</td>
-            <td class="">0%</td>
-        </tr><tr>
-            <td>内鬼</td>
-            <td>Invader</td>
-            <td class="down">23.4%</td>
-            <td class="down">-14%</td>
-            <td class="down">1.8%</td>
-            <td class="down">-3.8%</td>
-        </tr><tr>
-            <td>守夜人</td>
-            <td>Invader</td>
-            <td class="down">22.7%</td>
-            <td class="down">-6.2%</td>
-            <td class="up">3.2%</td>
-            <td class="up">+1.5%</td>
-        </tr><tr>
-            <td>幸存者</td>
-            <td>Neutral</td>
-            <td class="down">70.3%</td>
-            <td class="down">-2%</td>
-            <td class="up">39.3%</td>
-            <td class="up">+35%</td>
-        </tr><tr>
-            <td>墙头草</td>
-            <td>Neutral</td>
-            <td class="down">53.3%</td>
-            <td class="down">-3.1%</td>
-            <td class="up">13.2%</td>
-            <td class="up">+12.2%</td>
-        </tr><tr>
-            <td>小蜜蜂</td>
-            <td>Neutral</td>
-            <td class="down">46.7%</td>
-            <td class="down">-7.8%</td>
-            <td class="up">26.7%</td>
-            <td class="up">+20.8%</td>
-        </tr><tr>
-            <td>丘比特</td>
-            <td>Neutral</td>
-            <td class="down">43.4%</td>
-            <td class="down">-13.6%</td>
-            <td class="up">17.1%</td>
-            <td class="up">+15.3%</td>
-        </tr><tr>
-            <td>怪盗</td>
-            <td>Neutral</td>
-            <td class="down">30.2%</td>
-            <td class="down">-3%</td>
-            <td class="up">21.2%</td>
-            <td class="up">+20.2%</td>
-        </tr><tr>
-            <td>神子</td>
-            <td>Neutral</td>
-            <td class="down">26.1%</td>
-            <td class="down">-2.5%</td>
-            <td class="up">4.7%</td>
-            <td class="up">+4.2%</td>
-        </tr><tr>
-            <td>恶魔</td>
-            <td>Neutral</td>
-            <td class="down">24.3%</td>
-            <td class="down">-3.4%</td>
-            <td class="up">5.1%</td>
-            <td class="up">+3.8%</td>
-        </tr><tr>
-            <td>幻影</td>
-            <td>Neutral</td>
-            <td class="up">23.2%</td>
-            <td class="up">+14%</td>
-            <td class="up">15.3%</td>
-            <td class="up">+13.6%</td>
-        </tr><tr>
-            <td>饕餮</td>
-            <td>Neutral</td>
-            <td class="up">17.2%</td>
-            <td class="up">+4.7%</td>
-            <td class="up">4.1%</td>
-            <td class="up">+2.9%</td>
-        </tr><tr>
-            <td>无面人</td>
-            <td>Neutral</td>
-            <td class="down">17.2%</td>
-            <td class="down">-7.4%</td>
-            <td class="up">10.9%</td>
-            <td class="up">+8.9%</td>
-        </tr><tr>
-            <td>小丑</td>
-            <td>Neutral</td>
-            <td class="down">15.1%</td>
-            <td class="down">-4.6%</td>
-            <td class="up">9.1%</td>
-            <td class="up">+3.9%</td>
-        </tr><tr>
-            <td>大胃王</td>
-            <td>Neutral</td>
-            <td class="down">13.7%</td>
-            <td class="down">-6.4%</td>
-            <td class="up">13.9%</td>
-            <td class="up">+4.2%</td>
-        </tr><tr>
-            <td>焰火师</td>
-            <td>Neutral</td>
-            <td class="down">12.8%</td>
-            <td class="down">-6.7%</td>
-            <td class="up">8.2%</td>
-            <td class="up">+3.3%</td>
-        </tr><tr>
-            <td>怪兽</td>
-            <td>Neutral</td>
-            <td class="down">12.2%</td>
-            <td class="down">-4%</td>
-            <td class="down">7.4%</td>
-            <td class="down">-9.4%</td>
-        </tr><tr>
-            <td>奶龙</td>
-            <td>Neutral</td>
-            <td class="down">8.1%</td>
-            <td class="down">-24.1%</td>
-            <td class="up">3.8%</td>
-            <td class="up">+3.2%</td>
-        </tr></table></div><h2>Peak Tournament - 2026-04-22</h2>
-    <div class="table-wrap">
-    <table>
-    <tr><th>角色</th><th>阵营</th><th>胜率</th><th>变化</th><th>登场率</th><th>变化</th></tr><tr>
-            <td>换票师</td>
-            <td>Astronaut</td>
-            <td class="down">49.6%</td>
-            <td class="down">-3.6%</td>
-            <td class="down">30.4%</td>
-            <td class="down">-5.2%</td>
-        </tr><tr>
-            <td>勇者</td>
-            <td>Astronaut</td>
-            <td class="down">47.2%</td>
-            <td class="down">-3%</td>
-            <td class="down">23.4%</td>
-            <td class="down">-0.8%</td>
-        </tr><tr>
-            <td>考古学家</td>
-            <td>Astronaut</td>
-            <td class="down">47.2%</td>
-            <td class="down">-8.2%</td>
-            <td class="up">20.2%</td>
-            <td class="up">+3.8%</td>
-        </tr><tr>
-            <td>时间之主</td>
-            <td>Astronaut</td>
-            <td class="down">45.7%</td>
-            <td class="down">-5.3%</td>
-            <td class="down">21.7%</td>
-            <td class="down">-2.5%</td>
-        </tr><tr>
-            <td>卧底</td>
-            <td>Astronaut</td>
-            <td class="down">45.6%</td>
-            <td class="down">-7.9%</td>
-            <td class="down">14.5%</td>
-            <td class="down">-1.4%</td>
-        </tr><tr>
-            <td>工程师</td>
-            <td>Astronaut</td>
-            <td class="down">44.1%</td>
-            <td class="down">-4.9%</td>
-            <td class="down">22.4%</td>
-            <td class="down">-11.4%</td>
-        </tr><tr>
-            <td>守卫</td>
-            <td>Astronaut</td>
-            <td class="down">43.9%</td>
-            <td class="down">-5.7%</td>
-            <td class="down">19.9%</td>
-            <td class="down">-4.3%</td>
-        </tr><tr>
-            <td>保安</td>
-            <td>Astronaut</td>
-            <td class="down">43.9%</td>
-            <td class="down">-0.5%</td>
-            <td class="up">16.2%</td>
-            <td class="up">+1.7%</td>
-        </tr><tr>
-            <td>单面人</td>
-            <td>Astronaut</td>
-            <td class="down">43.3%</td>
-            <td class="down">-6.6%</td>
-            <td class="down">37.5%</td>
-            <td class="down">-5%</td>
-        </tr><tr>
-            <td>光之巨人</td>
-            <td>Astronaut</td>
-            <td class="down">43.1%</td>
-            <td class="down">-9.4%</td>
-            <td class="down">29.6%</td>
-            <td class="down">-3.1%</td>
-        </tr><tr>
-            <td>市长</td>
-            <td>Astronaut</td>
-            <td class="down">42.9%</td>
-            <td class="down">-10.2%</td>
-            <td class="up">22%</td>
-            <td class="up">+3.8%</td>
-        </tr><tr>
-            <td>老兵</td>
-            <td>Astronaut</td>
-            <td class="down">42.7%</td>
-            <td class="down">-13.8%</td>
-            <td class="up">23.3%</td>
-            <td class="up">+2.4%</td>
-        </tr><tr>
-            <td>猎人</td>
-            <td>Astronaut</td>
-            <td class="down">42.5%</td>
-            <td class="down">-12.4%</td>
-            <td class="up">26.7%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>守望者</td>
-            <td>Astronaut</td>
-            <td class="down">42.1%</td>
-            <td class="down">-9.6%</td>
-            <td class="up">30.8%</td>
-            <td class="up">+1.2%</td>
-        </tr><tr>
-            <td>警长</td>
-            <td>Astronaut</td>
-            <td class="down">41.7%</td>
-            <td class="down">-9.4%</td>
-            <td class="up">99.9%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>魔术师</td>
-            <td>Astronaut</td>
-            <td class="down">41.7%</td>
-            <td class="down">-4.2%</td>
-            <td class="down">16.8%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>诱饵</td>
-            <td>Astronaut</td>
-            <td class="down">41.4%</td>
-            <td class="down">-10.1%</td>
-            <td class="up">99.8%</td>
-            <td class="up">+0.5%</td>
-        </tr><tr>
-            <td>武士</td>
-            <td>Astronaut</td>
-            <td class="down">40.3%</td>
-            <td class="down">-11.4%</td>
-            <td class="up">47.2%</td>
-            <td class="up">+1.2%</td>
-        </tr><tr>
-            <td>管道工</td>
-            <td>Astronaut</td>
-            <td class="down">40.1%</td>
-            <td class="down">-11.5%</td>
-            <td class="up">21.1%</td>
-            <td class="up">+2.3%</td>
-        </tr><tr>
-            <td>医生</td>
-            <td>Astronaut</td>
-            <td class="down">39.3%</td>
-            <td class="down">-10.5%</td>
-            <td class="down">27.2%</td>
-            <td class="down">-0.1%</td>
-        </tr><tr>
-            <td>侦探</td>
-            <td>Astronaut</td>
-            <td class="down">38.6%</td>
-            <td class="down">-18%</td>
-            <td class="up">23.6%</td>
-            <td class="up">+5.4%</td>
-        </tr><tr>
-            <td>预言家</td>
-            <td>Astronaut</td>
-            <td class="down">38.5%</td>
-            <td class="down">-16.1%</td>
-            <td class="up">22.6%</td>
-            <td class="up">+3.3%</td>
-        </tr><tr>
-            <td>情报员</td>
-            <td>Astronaut</td>
-            <td class="down">38.4%</td>
-            <td class="down">-11.6%</td>
-            <td class="up">20%</td>
-            <td class="up">+1.9%</td>
-        </tr><tr>
-            <td>狱卒</td>
-            <td>Astronaut</td>
-            <td class="down">38.2%</td>
-            <td class="down">-10.7%</td>
-            <td class="down">18%</td>
-            <td class="down">-0.2%</td>
-        </tr><tr>
-            <td>黑客</td>
-            <td>Astronaut</td>
-            <td class="down">35.5%</td>
-            <td class="down">-14.8%</td>
-            <td class="up">22.6%</td>
-            <td class="up">+3.2%</td>
-        </tr><tr>
-            <td>哪吒</td>
-            <td>Astronaut</td>
-            <td class="down">34.3%</td>
-            <td class="down">-12.6%</td>
-            <td class="up">20.8%</td>
-            <td class="up">+1.6%</td>
-        </tr><tr>
-            <td>国王</td>
-            <td>Astronaut</td>
-            <td class="down">33.6%</td>
-            <td class="down">-15.9%</td>
-            <td class="up">21.6%</td>
-            <td class="up">+0.9%</td>
-        </tr><tr>
-            <td>时间刺客</td>
-            <td>Invader</td>
-            <td class="up">54%</td>
-            <td class="up">+18.8%</td>
-            <td class="up">11.2%</td>
-            <td class="up">+1.9%</td>
-        </tr><tr>
-            <td>女帝</td>
-            <td>Invader</td>
-            <td class="up">48.9%</td>
-            <td class="up">+2.3%</td>
-            <td class="up">10.3%</td>
-            <td class="up">+1.6%</td>
-        </tr><tr>
-            <td>摄魂怪</td>
-            <td>Invader</td>
-            <td class="up">48.4%</td>
-            <td class="up">+10.8%</td>
-            <td class="up">32.9%</td>
-            <td class="up">+11.4%</td>
-        </tr><tr>
-            <td>清洁工</td>
-            <td>Invader</td>
-            <td class="up">47%</td>
-            <td class="up">+3.9%</td>
-            <td class="up">15.3%</td>
-            <td class="up">+0.8%</td>
-        </tr><tr>
-            <td>闪光弹</td>
-            <td>Invader</td>
-            <td class="up">45.8%</td>
-            <td class="up">+13.7%</td>
-            <td class="down">6.2%</td>
-            <td class="down">-1.7%</td>
-        </tr><tr>
-            <td>搬运工</td>
-            <td>Invader</td>
-            <td class="up">44.9%</td>
-            <td class="up">+7%</td>
-            <td class="down">7.3%</td>
-            <td class="down">-2.1%</td>
-        </tr><tr>
-            <td>伪人</td>
-            <td>Invader</td>
-            <td class="up">44.9%</td>
-            <td class="up">+1.6%</td>
-            <td class="up">6.8%</td>
-            <td class="up">+0.1%</td>
-        </tr><tr>
-            <td>欺诈师</td>
-            <td>Invader</td>
-            <td class="up">44.3%</td>
-            <td class="up">+8.1%</td>
-            <td class="down">9.1%</td>
-            <td class="down">-1.4%</td>
-        </tr><tr>
-            <td>赏金猎人</td>
-            <td>Invader</td>
-            <td class="up">44.2%</td>
-            <td class="up">+3.7%</td>
-            <td class="down">9.6%</td>
-            <td class="down">-1.8%</td>
-        </tr><tr>
-            <td>狙击手</td>
-            <td>Invader</td>
-            <td class="up">43.7%</td>
-            <td class="up">+13.3%</td>
-            <td class="down">6.7%</td>
-            <td class="down">-0.4%</td>
-        </tr><tr>
-            <td>双面人</td>
-            <td>Invader</td>
-            <td class="up">43%</td>
-            <td class="up">+6.7%</td>
-            <td class="down">95%</td>
-            <td class="down">-2.2%</td>
-        </tr><tr>
-            <td>忍者</td>
-            <td>Invader</td>
-            <td class="up">42.7%</td>
-            <td class="up">+13.6%</td>
-            <td class="up">9.9%</td>
-            <td class="up">+1.5%</td>
-        </tr><tr>
-            <td>变色龙</td>
-            <td>Invader</td>
-            <td class="up">42.5%</td>
-            <td class="up">+3.4%</td>
-            <td class="down">8.1%</td>
-            <td class="down">-2.9%</td>
-        </tr><tr>
-            <td>暗之巨人</td>
-            <td>Invader</td>
-            <td class="up">40.9%</td>
-            <td class="up">+4.4%</td>
-            <td class="up">7.1%</td>
-            <td class="up">+0.6%</td>
-        </tr><tr>
-            <td>间谍</td>
-            <td>Invader</td>
-            <td class="up">40.7%</td>
-            <td class="up">+6.5%</td>
-            <td class="down">6.5%</td>
-            <td class="down">-1.2%</td>
-        </tr><tr>
-            <td>捣蛋鬼</td>
-            <td>Invader</td>
-            <td class="up">40%</td>
-            <td class="up">+6.7%</td>
-            <td class="down">5.4%</td>
-            <td class="down">-1.1%</td>
-        </tr><tr>
-            <td>咒术师</td>
-            <td>Invader</td>
-            <td class="up">38.5%</td>
-            <td class="up">+7%</td>
-            <td class="down">8.7%</td>
-            <td class="down">-0.3%</td>
-        </tr><tr>
-            <td>女巫</td>
-            <td>Invader</td>
-            <td class="up">38.4%</td>
-            <td class="up">+2%</td>
-            <td class="up">10.4%</td>
-            <td class="up">+1.2%</td>
-        </tr><tr>
-            <td>孙悟空</td>
-            <td>Invader</td>
-            <td class="up">37.9%</td>
-            <td class="up">+14.5%</td>
-            <td class="down">5%</td>
-            <td class="down">-1.3%</td>
-        </tr><tr>
-            <td>守夜人</td>
-            <td>Invader</td>
-            <td class="up">36%</td>
-            <td class="up">+7.1%</td>
-            <td class="down">7.4%</td>
-            <td class="down">-0.9%</td>
-        </tr><tr>
-            <td>吸血鬼</td>
-            <td>Invader</td>
-            <td class="up">36%</td>
-            <td class="up">+3.1%</td>
-            <td class="up">8.7%</td>
-            <td class="up">+0.9%</td>
-        </tr><tr>
-            <td>小黑</td>
-            <td>Invader</td>
-            <td class="up">34.8%</td>
-            <td class="up">+0.1%</td>
-            <td class="down">5.3%</td>
-            <td class="down">-1.8%</td>
-        </tr><tr>
-            <td>收债人</td>
-            <td>Invader</td>
-            <td class="down">30.2%</td>
-            <td class="down">-3.1%</td>
-            <td class="down">7.1%</td>
-            <td class="down">-1.1%</td>
-        </tr><tr>
-            <td>恶魔</td>
-            <td>Neutral</td>
-            <td class="down">20.5%</td>
-            <td class="down">-2.2%</td>
-            <td class="up">10%</td>
-            <td class="up">+1.4%</td>
-        </tr><tr>
-            <td>幻影</td>
-            <td>Neutral</td>
-            <td class="up">20.5%</td>
-            <td class="up">+2.1%</td>
-            <td class="up">35.7%</td>
-            <td class="up">+3.1%</td>
-        </tr><tr>
-            <td>小丑</td>
-            <td>Neutral</td>
-            <td class="down">17.1%</td>
-            <td class="down">-0.7%</td>
-            <td class="down">13.2%</td>
-            <td class="down">-3.1%</td>
-        </tr><tr>
-            <td>大胃王</td>
-            <td>Neutral</td>
-            <td class="up">12.2%</td>
-            <td class="up">+9.4%</td>
-            <td class="up">11.1%</td>
-            <td class="up">+0.3%</td>
-        </tr><tr>
-            <td>焰火师</td>
-            <td>Neutral</td>
-            <td class="up">9.4%</td>
-            <td class="up">+3.4%</td>
-            <td class="down">9.7%</td>
-            <td class="down">-3.7%</td>
-        </tr><tr>
-            <td>怪兽</td>
-            <td>Neutral</td>
-            <td class="up">8.9%</td>
-            <td class="up">+5.6%</td>
-            <td class="up">9.2%</td>
-            <td class="up">+0.3%</td>
-        </tr><tr>
-            <td>饕餮</td>
-            <td>Neutral</td>
-            <td class="down">4.7%</td>
-            <td class="down">-1.6%</td>
-            <td class="up">11.1%</td>
-            <td class="up">+1.6%</td>
-        </tr></table></div></body></html>
+<div class="dates" id="dates"></div>
+</div><div class="mode-section" id="section-诸神排位">
+<div class="mode-title">Gods Ranking <span class="mode-badge">2026-04-22</span></div>
+<div class="ai-summary">诸神排位整体表现：T1顶尖角色包括船员(45.1%)、蛇精(60.6%)、教父(52.4%)；弱势角色需关注搬运工(36.6%)、市长(37.3%)、工程师(37.3%)；最大异动幻影上升了11.6%</div>
+<div class="legend">
+<div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>T1 顶尖</div>
+<div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>T2 强势</div>
+<div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>T3 平稳</div>
+<div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>T4 弱势</div>
+</div>
+<div class="filter-bar">
+<input type="text" id="search-诸神排位" placeholder="搜索角色..." oninput="filterTable('诸神排位')">
+<select id="faction-诸神排位" onchange="filterTable('诸神排位')">
+<option value="">全部阵营</option>
+<option value="astronaut">Astronaut</option>
+<option value="invader">Invader</option>
+<option value="neutral">Neutral</option>
+</select>
+<select id="tier-诸神排位" onchange="filterTable('诸神排位')">
+<option value="">全部等级</option>
+<option value="T1">T1 顶尖</option>
+<option value="T2">T2 强势</option>
+<option value="T3">T3 平稳</option>
+<option value="T4">T4 弱势</option>
+</select>
+</div>
+<table class="tier-table" id="table-诸神排位">
+<thead><tr>
+<th>角色</th><th>阵营</th><th>胜率</th><th>登场率</th><th>综合分</th><th>等级</th></tr></thead>
+<tbody><tr onclick="showDetail('诸神排位', '2026-04-22', '船员')">
+<td class="role-cell">船员</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">45.1%</td>
+<td>199.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 2.11</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '蛇精')">
+<td class="role-cell">蛇精</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">60.6%</td>
+<td>0.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.44</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '教父')">
+<td class="role-cell">教父</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">52.4%</td>
+<td>4.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.17</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '幸存者')">
+<td class="role-cell">幸存者</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">72.4%</td>
+<td>5.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:95.94882183238624%;background:#4ade80"></span></span> 0.96</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '女帝')">
+<td class="role-cell">女帝</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">50.9%</td>
+<td>1.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:86.02010972751496%;background:#4ade80"></span></span> 0.86</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '柯南')">
+<td class="role-cell">柯南</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">56.9%</td>
+<td>5.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:85.17456449683374%;background:#4ade80"></span></span> 0.85</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '收割者')">
+<td class="role-cell">收割者</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">50.8%</td>
+<td>0.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:81.83854170281788%;background:#4ade80"></span></span> 0.82</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '警长')">
+<td class="role-cell">警长</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.1%</td>
+<td>33.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:80.69448676302508%;background:#4ade80"></span></span> 0.81</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '熊大熊二')">
+<td class="role-cell">熊大熊二</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">50.2%</td>
+<td>0.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:77.26932894047218%;background:#4ade80"></span></span> 0.77</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '赏金猎人')">
+<td class="role-cell">赏金猎人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">48.2%</td>
+<td>3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:77.04727231646358%;background:#4ade80"></span></span> 0.77</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '变色龙')">
+<td class="role-cell">变色龙</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">41.8%</td>
+<td>36.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:73.03371781054163%;background:#4ade80"></span></span> 0.73</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '葫芦兄弟')">
+<td class="role-cell">葫芦兄弟</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.8%</td>
+<td>8.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:70.6523795653061%;background:#4ade80"></span></span> 0.71</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '双面人')">
+<td class="role-cell">双面人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.1%</td>
+<td>13.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:69.96862254594654%;background:#4ade80"></span></span> 0.70</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '摄魂怪')">
+<td class="role-cell">摄魂怪</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">46.1%</td>
+<td>5.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:67.71593337091633%;background:#4ade80"></span></span> 0.68</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '墙头草')">
+<td class="role-cell">墙头草</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">63.6%</td>
+<td>1.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:64.6926500827134%;background:#4ade80"></span></span> 0.65</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '忍者')">
+<td class="role-cell">忍者</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">47.6%</td>
+<td>2.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:64.27181455486105%;background:#4ade80"></span></span> 0.64</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '小蜜蜂')">
+<td class="role-cell">小蜜蜂</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="">46.5%</td>
+<td>7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:64.07269851381976%;background:#4ade80"></span></span> 0.64</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '鬼新娘')">
+<td class="role-cell">鬼新娘</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">48.1%</td>
+<td>1.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:62.74643110911605%;background:#4ade80"></span></span> 0.63</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '时间刺客')">
+<td class="role-cell">时间刺客</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">46.5%</td>
+<td>2.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:59.66292847378939%;background:#4ade80"></span></span> 0.60</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '丘比特')">
+<td class="role-cell">丘比特</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">51.4%</td>
+<td>2.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:54.814175721437444%;background:#4ade80"></span></span> 0.55</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '狙击手')">
+<td class="role-cell">狙击手</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">41.9%</td>
+<td>24.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:52.76478720958306%;background:#4ade80"></span></span> 0.53</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '小黑')">
+<td class="role-cell">小黑</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">47.3%</td>
+<td>0.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:51.72458379074445%;background:#4ade80"></span></span> 0.52</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '时间之主')">
+<td class="role-cell">时间之主</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.1%</td>
+<td>2.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:51.361947567981424%;background:#4ade80"></span></span> 0.51</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '武士')">
+<td class="role-cell">武士</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.2%</td>
+<td>2.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:50.06472126706535%;background:#4ade80"></span></span> 0.50</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '毛利兰')">
+<td class="role-cell">毛利兰</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.9%</td>
+<td>0.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:42.66447091020315%;background:#4ade80"></span></span> 0.43</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '吸血鬼')">
+<td class="role-cell">吸血鬼</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">45.6%</td>
+<td>1.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:42.09625118293705%;background:#4ade80"></span></span> 0.42</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '诱饵')">
+<td class="role-cell">诱饵</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.1%</td>
+<td>1.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:41.60928419040195%;background:#4ade80"></span></span> 0.42</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '国王')">
+<td class="role-cell">国王</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.9%</td>
+<td>1.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:39.54223240274244%;background:#4ade80"></span></span> 0.40</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '单面人')">
+<td class="role-cell">单面人</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48%</td>
+<td>9.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:38.2082314551431%;background:#4ade80"></span></span> 0.38</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '逍遥')">
+<td class="role-cell">逍遥</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52%</td>
+<td>0.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:36.90252313763174%;background:#4ade80"></span></span> 0.37</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '伪人')">
+<td class="role-cell">伪人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.4%</td>
+<td>2.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:36.72684053715157%;background:#4ade80"></span></span> 0.37</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '勇者')">
+<td class="role-cell">勇者</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.1%</td>
+<td>1.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:34.44358278289618%;background:#4ade80"></span></span> 0.34</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '卧底')">
+<td class="role-cell">卧底</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.8%</td>
+<td>0.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:30.220872406869493%;background:#4ade80"></span></span> 0.30</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '清洁工')">
+<td class="role-cell">清洁工</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.6%</td>
+<td>6.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:29.913774495112612%;background:#4ade80"></span></span> 0.30</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '法官')">
+<td class="role-cell">法官</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.4%</td>
+<td>1.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:28.960966836317077%;background:#4ade80"></span></span> 0.29</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '暗之巨人')">
+<td class="role-cell">暗之巨人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.3%</td>
+<td>1.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:25.467500901222685%;background:#4ade80"></span></span> 0.25</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '哪吒')">
+<td class="role-cell">哪吒</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.3%</td>
+<td>3.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:24.566921911599135%;background:#4ade80"></span></span> 0.25</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '换票师')">
+<td class="role-cell">换票师</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">49%</td>
+<td>2.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:22.667324146899716%;background:#4ade80"></span></span> 0.23</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '欺诈师')">
+<td class="role-cell">欺诈师</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">43.4%</td>
+<td>1.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:16.210230373994385%;background:#4ade80"></span></span> 0.16</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '守望者')">
+<td class="role-cell">守望者</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">46.3%</td>
+<td>8.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:10.758203598168084%;background:#4ade80"></span></span> 0.11</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '怪兽')">
+<td class="role-cell">怪兽</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">15.5%</td>
+<td>16.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:8.921088863885245%;background:#4ade80"></span></span> 0.09</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '考古学家')">
+<td class="role-cell">考古学家</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.1%</td>
+<td>0.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:8.724525332946968%;background:#4ade80"></span></span> 0.09</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '神子')">
+<td class="role-cell">神子</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">31.7%</td>
+<td>0.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:8.070820195823169%;background:#4ade80"></span></span> 0.08</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '怪盗')">
+<td class="role-cell">怪盗</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">28.2%</td>
+<td>1.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:0.8959725362424314%;background:#4ade80"></span></span> 0.01</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '光之巨人')">
+<td class="role-cell">光之巨人</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">47%</td>
+<td>1.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:0.6736350490247525%;background:#4ade80"></span></span> 0.01</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '守夜人')">
+<td class="role-cell">守夜人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.4%</td>
+<td>1.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:0.3847357558580636%;background:#ef4444"></span></span> -0.00</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '灰原哀')">
+<td class="role-cell">灰原哀</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">47.3%</td>
+<td>0.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:0.4233927348918337%;background:#ef4444"></span></span> -0.00</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '大胃王')">
+<td class="role-cell">大胃王</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">17.8%</td>
+<td>9.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:1.411506787032088%;background:#ef4444"></span></span> -0.01</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '捣蛋鬼')">
+<td class="role-cell">捣蛋鬼</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.6%</td>
+<td>0.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:1.7123064137444035%;background:#ef4444"></span></span> -0.02</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '女巫')">
+<td class="role-cell">女巫</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">41.6%</td>
+<td>4.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:4.148424256896528%;background:#ef4444"></span></span> -0.04</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '奶龙')">
+<td class="role-cell">奶龙</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">26.8%</td>
+<td>0.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:8.240975297903871%;background:#ef4444"></span></span> -0.08</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '恶魔')">
+<td class="role-cell">恶魔</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">25.7%</td>
+<td>1.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:10.336936203198373%;background:#ef4444"></span></span> -0.10</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '狱卒')">
+<td class="role-cell">狱卒</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">46.6%</td>
+<td>1.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:11.965307380183612%;background:#ef4444"></span></span> -0.12</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '医生')">
+<td class="role-cell">医生</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.1%</td>
+<td>8.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:15.10368624249728%;background:#ef4444"></span></span> -0.15</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '老兵')">
+<td class="role-cell">老兵</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.3%</td>
+<td>7.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:16.086399757739564%;background:#ef4444"></span></span> -0.16</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '小丑')">
+<td class="role-cell">小丑</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">16.3%</td>
+<td>4.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:16.984805639327345%;background:#ef4444"></span></span> -0.17</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '无面人')">
+<td class="role-cell">无面人</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">19.1%</td>
+<td>2.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:20.150849771366197%;background:#ef4444"></span></span> -0.20</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '焰火师')">
+<td class="role-cell">焰火师</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">14.8%</td>
+<td>4.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:21.172265367521547%;background:#ef4444"></span></span> -0.21</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '预言家')">
+<td class="role-cell">预言家</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.4%</td>
+<td>13.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:23.090583445591633%;background:#ef4444"></span></span> -0.23</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '孙悟空')">
+<td class="role-cell">孙悟空</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.8%</td>
+<td>2.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:24.039290640358352%;background:#ef4444"></span></span> -0.24</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '饕餮')">
+<td class="role-cell">饕餮</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">19.5%</td>
+<td>1.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:26.378944697612077%;background:#ef4444"></span></span> -0.26</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '幻影')">
+<td class="role-cell">幻影</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">15.9%</td>
+<td>2.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:27.856682263869644%;background:#ef4444"></span></span> -0.28</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '咒术师')">
+<td class="role-cell">咒术师</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">39.5%</td>
+<td>4.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:28.268912495817755%;background:#ef4444"></span></span> -0.28</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '间谍')">
+<td class="role-cell">间谍</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">39.7%</td>
+<td>3.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:29.839588073760964%;background:#ef4444"></span></span> -0.30</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '情报员')">
+<td class="role-cell">情报员</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.7%</td>
+<td>3.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:32.343488184874374%;background:#ef4444"></span></span> -0.32</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '收债人')">
+<td class="role-cell">收债人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.9%</td>
+<td>1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:34.122393451152114%;background:#ef4444"></span></span> -0.34</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '闪光弹')">
+<td class="role-cell">闪光弹</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.6%</td>
+<td>1.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:35.300115923091994%;background:#ef4444"></span></span> -0.35</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '管道工')">
+<td class="role-cell">管道工</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.3%</td>
+<td>5.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:40.13540443084159%;background:#ef4444"></span></span> -0.40</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '内鬼')">
+<td class="role-cell">内鬼</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">38.1%</td>
+<td>5.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:40.19273810540082%;background:#ef4444"></span></span> -0.40</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '守卫')">
+<td class="role-cell">守卫</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.4%</td>
+<td>3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:43.600149291803525%;background:#ef4444"></span></span> -0.44</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '侦探')">
+<td class="role-cell">侦探</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.7%</td>
+<td>2.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:45.28878186338454%;background:#ef4444"></span></span> -0.45</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '猎人')">
+<td class="role-cell">猎人</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.5%</td>
+<td>3.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:45.97972505793052%;background:#ef4444"></span></span> -0.46</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '黑客')">
+<td class="role-cell">黑客</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.2%</td>
+<td>6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:51.47711936438706%;background:#ef4444"></span></span> -0.51</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '魔术师')">
+<td class="role-cell">魔术师</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.5%</td>
+<td>1.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:52.27136126214747%;background:#ef4444"></span></span> -0.52</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '保安')">
+<td class="role-cell">保安</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.3%</td>
+<td>2.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:53.6699098702837%;background:#ef4444"></span></span> -0.54</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '工程师')">
+<td class="role-cell">工程师</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">37.3%</td>
+<td>6.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:55.91298751292808%;background:#ef4444"></span></span> -0.56</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '市长')">
+<td class="role-cell">市长</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">37.3%</td>
+<td>1.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:74.47688333476643%;background:#ef4444"></span></span> -0.74</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('诸神排位', '2026-04-22', '搬运工')">
+<td class="role-cell">搬运工</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">36.6%</td>
+<td>1.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:76.90698572238514%;background:#ef4444"></span></span> -0.77</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr></tbody></table><div class="changes-section">
+<div class="changes-title">📈 显著异动（胜率变化≥5% 或 登场率变化≥10%）</div><span class="change-tag up">幻影 +11.6%</span><span class="change-tag down">灰原哀 -10.4%</span><span class="change-tag up">饕餮 +8.3%</span><span class="change-tag up">守夜人 +7.6%</span><span class="change-tag down">魔术师 -6.6%</span><span class="change-tag up">奶龙 +5.1%</span><span class="change-tag down">搬运工 -5%</span><span class="change-tag down">焰火师 -5%</span></div><div class="role-detail" id="detail-诸神排位"></div></div><div class="mode-section" id="section-特别行动单人排位">
+<div class="mode-title">Special Ops Solo <span class="mode-badge">2026-04-22</span></div>
+<div class="ai-summary">特别行动单人排位整体表现：T1顶尖角色包括幸存者(70.3%)、双面人(35.5%)、教父(37.6%)；弱势角色需关注船员(45.4%)、侦探(48.3%)、情报员(48.9%)；最大异动奶龙下降了24.1%</div>
+<div class="legend">
+<div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>T1 顶尖</div>
+<div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>T2 强势</div>
+<div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>T3 平稳</div>
+<div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>T4 弱势</div>
+</div>
+<div class="filter-bar">
+<input type="text" id="search-特别行动单人排位" placeholder="搜索角色..." oninput="filterTable('特别行动单人排位')">
+<select id="faction-特别行动单人排位" onchange="filterTable('特别行动单人排位')">
+<option value="">全部阵营</option>
+<option value="astronaut">Astronaut</option>
+<option value="invader">Invader</option>
+<option value="neutral">Neutral</option>
+</select>
+<select id="tier-特别行动单人排位" onchange="filterTable('特别行动单人排位')">
+<option value="">全部等级</option>
+<option value="T1">T1 顶尖</option>
+<option value="T2">T2 强势</option>
+<option value="T3">T3 平稳</option>
+<option value="T4">T4 弱势</option>
+</select>
+</div>
+<table class="tier-table" id="table-特别行动单人排位">
+<thead><tr>
+<th>角色</th><th>阵营</th><th>胜率</th><th>登场率</th><th>综合分</th><th>等级</th></tr></thead>
+<tbody><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '幸存者')">
+<td class="role-cell">幸存者</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">70.3%</td>
+<td>39.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.39</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '双面人')">
+<td class="role-cell">双面人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">35.5%</td>
+<td>35.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.28</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '教父')">
+<td class="role-cell">教父</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">37.6%</td>
+<td>14.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.06</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '摄魂怪')">
+<td class="role-cell">摄魂怪</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">36.1%</td>
+<td>17.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.01</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '小蜜蜂')">
+<td class="role-cell">小蜜蜂</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="">46.7%</td>
+<td>26.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:88.9685317384311%;background:#4ade80"></span></span> 0.89</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '鬼新娘')">
+<td class="role-cell">鬼新娘</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">38.1%</td>
+<td>5.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:82.29082168480258%;background:#4ade80"></span></span> 0.82</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '赏金猎人')">
+<td class="role-cell">赏金猎人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">33.4%</td>
+<td>15.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:79.50871772213549%;background:#4ade80"></span></span> 0.80</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '葫芦兄弟')">
+<td class="role-cell">葫芦兄弟</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">55%</td>
+<td>54.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:78.85851373405072%;background:#4ade80"></span></span> 0.79</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '墙头草')">
+<td class="role-cell">墙头草</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="positive">53.3%</td>
+<td>13.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:74.01306572170267%;background:#4ade80"></span></span> 0.74</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '收割者')">
+<td class="role-cell">收割者</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">35.5%</td>
+<td>6.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:72.09048484713965%;background:#4ade80"></span></span> 0.72</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '柯南')">
+<td class="role-cell">柯南</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">55.2%</td>
+<td>37.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:69.5674326083927%;background:#4ade80"></span></span> 0.70</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '丘比特')">
+<td class="role-cell">丘比特</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="">43.4%</td>
+<td>17.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:67.46110320808096%;background:#4ade80"></span></span> 0.67</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '女帝')">
+<td class="role-cell">女帝</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">35.3%</td>
+<td>5.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:66.37537339381213%;background:#4ade80"></span></span> 0.66</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '时间之主')">
+<td class="role-cell">时间之主</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">55.9%</td>
+<td>19.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:63.64464583349426%;background:#4ade80"></span></span> 0.64</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '毛利兰')">
+<td class="role-cell">毛利兰</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">57.1%</td>
+<td>9.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:63.24248830200442%;background:#4ade80"></span></span> 0.63</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '吸血鬼')">
+<td class="role-cell">吸血鬼</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">32.4%</td>
+<td>10.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:61.11350141085457%;background:#4ade80"></span></span> 0.61</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '卧底')">
+<td class="role-cell">卧底</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">57.1%</td>
+<td>4.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:55.43405505666084%;background:#4ade80"></span></span> 0.55</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '时间刺客')">
+<td class="role-cell">时间刺客</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">32.8%</td>
+<td>5.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:50.892962247025594%;background:#4ade80"></span></span> 0.51</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '熊大熊二')">
+<td class="role-cell">熊大熊二</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">34.4%</td>
+<td>3.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:50.75467994635463%;background:#4ade80"></span></span> 0.51</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '怪盗')">
+<td class="role-cell">怪盗</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">30.2%</td>
+<td>21.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:50.36859223954322%;background:#4ade80"></span></span> 0.50</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '逍遥')">
+<td class="role-cell">逍遥</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">55.5%</td>
+<td>8.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:37.26155306330011%;background:#4ade80"></span></span> 0.37</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '欺诈师')">
+<td class="role-cell">欺诈师</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">31.3%</td>
+<td>5.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:37.01017974162062%;background:#4ade80"></span></span> 0.37</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '警长')">
+<td class="role-cell">警长</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53%</td>
+<td>72.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:35.703101018871905%;background:#4ade80"></span></span> 0.36</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '暗之巨人')">
+<td class="role-cell">暗之巨人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">31%</td>
+<td>4.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:25.20651664199809%;background:#4ade80"></span></span> 0.25</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '狙击手')">
+<td class="role-cell">狙击手</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">29.2%</td>
+<td>7.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:22.585005227271303%;background:#4ade80"></span></span> 0.23</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '间谍')">
+<td class="role-cell">间谍</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30%</td>
+<td>5.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:22.49482693225685%;background:#4ade80"></span></span> 0.22</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '幻影')">
+<td class="role-cell">幻影</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">23.2%</td>
+<td>15.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:19.907858463126267%;background:#4ade80"></span></span> 0.20</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '光之巨人')">
+<td class="role-cell">光之巨人</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.3%</td>
+<td>34.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:15.249768818539843%;background:#4ade80"></span></span> 0.15</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '法官')">
+<td class="role-cell">法官</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.8%</td>
+<td>14.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:14.607534108224247%;background:#4ade80"></span></span> 0.15</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '蛇精')">
+<td class="role-cell">蛇精</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30.9%</td>
+<td>0.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:13.660795324589674%;background:#4ade80"></span></span> 0.14</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '搬运工')">
+<td class="role-cell">搬运工</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30.4%</td>
+<td>2.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:12.344655470840268%;background:#4ade80"></span></span> 0.12</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '忍者')">
+<td class="role-cell">忍者</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30%</td>
+<td>2.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:9.788695687926511%;background:#4ade80"></span></span> 0.10</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '武士')">
+<td class="role-cell">武士</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.6%</td>
+<td>19.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:9.177222199939608%;background:#4ade80"></span></span> 0.09</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '捣蛋鬼')">
+<td class="role-cell">捣蛋鬼</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">29.2%</td>
+<td>3.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:2.4433106158804896%;background:#4ade80"></span></span> 0.02</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '伪人')">
+<td class="role-cell">伪人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">29%</td>
+<td>3.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:0.8873892126050289%;background:#4ade80"></span></span> 0.01</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '灰原哀')">
+<td class="role-cell">灰原哀</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.8%</td>
+<td>8.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:0.1375400588663249%;background:#ef4444"></span></span> -0.00</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '单面人')">
+<td class="role-cell">单面人</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.8%</td>
+<td>51.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:1.1042406436919783%;background:#ef4444"></span></span> -0.01</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '神子')">
+<td class="role-cell">神子</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">26.1%</td>
+<td>4.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:2.1966217074208094%;background:#ef4444"></span></span> -0.02</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '老兵')">
+<td class="role-cell">老兵</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.8%</td>
+<td>26.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:3.2731280754201064%;background:#ef4444"></span></span> -0.03</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '女巫')">
+<td class="role-cell">女巫</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">27.8%</td>
+<td>7.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:3.6869685708076543%;background:#ef4444"></span></span> -0.04</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '变色龙')">
+<td class="role-cell">变色龙</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">27.9%</td>
+<td>7.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:3.7128119832733883%;background:#ef4444"></span></span> -0.04</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '清洁工')">
+<td class="role-cell">清洁工</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">27.4%</td>
+<td>8.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:5.319340154685687%;background:#ef4444"></span></span> -0.05</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '恶魔')">
+<td class="role-cell">恶魔</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">24.3%</td>
+<td>5.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:6.731333323746911%;background:#ef4444"></span></span> -0.07</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '大胃王')">
+<td class="role-cell">大胃王</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">13.7%</td>
+<td>13.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:15.378452347593052%;background:#ef4444"></span></span> -0.15</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '无面人')">
+<td class="role-cell">无面人</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">17.2%</td>
+<td>10.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:17.094536308953444%;background:#ef4444"></span></span> -0.17</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '医生')">
+<td class="role-cell">医生</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.9%</td>
+<td>27.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:18.852139118390028%;background:#ef4444"></span></span> -0.19</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '闪光弹')">
+<td class="role-cell">闪光弹</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">28.3%</td>
+<td>2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:20.805731118159706%;background:#ef4444"></span></span> -0.21</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '守卫')">
+<td class="role-cell">守卫</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.4%</td>
+<td>4.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:22.869638019549143%;background:#ef4444"></span></span> -0.23</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '收债人')">
+<td class="role-cell">收债人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">26.5%</td>
+<td>5.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:24.29431878964586%;background:#ef4444"></span></span> -0.24</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '考古学家')">
+<td class="role-cell">考古学家</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53.1%</td>
+<td>7.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:26.326988655367067%;background:#ef4444"></span></span> -0.26</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '咒术师')">
+<td class="role-cell">咒术师</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">26.3%</td>
+<td>5.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:27.065428007428295%;background:#ef4444"></span></span> -0.27</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '勇者')">
+<td class="role-cell">勇者</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">52.6%</td>
+<td>10.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:27.977696135462004%;background:#ef4444"></span></span> -0.28</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '市长')">
+<td class="role-cell">市长</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">53%</td>
+<td>7.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:28.063578315275006%;background:#ef4444"></span></span> -0.28</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '小丑')">
+<td class="role-cell">小丑</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">15.1%</td>
+<td>9.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:30.20859320893759%;background:#ef4444"></span></span> -0.30</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '守望者')">
+<td class="role-cell">守望者</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.9%</td>
+<td>15.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:32.82711202343808%;background:#ef4444"></span></span> -0.33</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '孙悟空')">
+<td class="role-cell">孙悟空</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">26.7%</td>
+<td>2.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:36.18820222938495%;background:#ef4444"></span></span> -0.36</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '饕餮')">
+<td class="role-cell">饕餮</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">17.2%</td>
+<td>4.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:36.636983108138786%;background:#ef4444"></span></span> -0.37</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '焰火师')">
+<td class="role-cell">焰火师</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">12.8%</td>
+<td>8.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:37.684631804829685%;background:#ef4444"></span></span> -0.38</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '小黑')">
+<td class="role-cell">小黑</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">27%</td>
+<td>1.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:38.46904570057613%;background:#ef4444"></span></span> -0.38</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '诱饵')">
+<td class="role-cell">诱饵</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.7%</td>
+<td>12.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:39.435921903518505%;background:#ef4444"></span></span> -0.39</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '怪兽')">
+<td class="role-cell">怪兽</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">12.2%</td>
+<td>7.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:40.906002965960084%;background:#ef4444"></span></span> -0.41</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '国王')">
+<td class="role-cell">国王</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.9%</td>
+<td>9.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:44.50717929456594%;background:#ef4444"></span></span> -0.45</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '换票师')">
+<td class="role-cell">换票师</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.8%</td>
+<td>17.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:46.54322668322368%;background:#ef4444"></span></span> -0.47</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '狱卒')">
+<td class="role-cell">狱卒</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.7%</td>
+<td>9.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:47.74264693740334%;background:#ef4444"></span></span> -0.48</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '预言家')">
+<td class="role-cell">预言家</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.1%</td>
+<td>20.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:52.20271785355474%;background:#ef4444"></span></span> -0.52</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '哪吒')">
+<td class="role-cell">哪吒</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">49.9%</td>
+<td>20.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:55.18546669348397%;background:#ef4444"></span></span> -0.55</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '奶龙')">
+<td class="role-cell">奶龙</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">8.1%</td>
+<td>3.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:56.484332515164105%;background:#ef4444"></span></span> -0.56</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '工程师')">
+<td class="role-cell">工程师</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50%</td>
+<td>14%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:62.163597288852976%;background:#ef4444"></span></span> -0.62</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '管道工')">
+<td class="role-cell">管道工</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.1%</td>
+<td>6.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:63.117420003704815%;background:#ef4444"></span></span> -0.63</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '保安')">
+<td class="role-cell">保安</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">51.2%</td>
+<td>4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:64.92318263541839%;background:#ef4444"></span></span> -0.65</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '猎人')">
+<td class="role-cell">猎人</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50%</td>
+<td>12%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:65.55789332685902%;background:#ef4444"></span></span> -0.66</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '内鬼')">
+<td class="role-cell">内鬼</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">23.4%</td>
+<td>1.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:66.06114962805327%;background:#ef4444"></span></span> -0.66</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '守夜人')">
+<td class="role-cell">守夜人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">22.7%</td>
+<td>3.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:66.40300459998937%;background:#ef4444"></span></span> -0.66</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '黑客')">
+<td class="role-cell">黑客</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="positive">50.5%</td>
+<td>6.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:71.52363451180128%;background:#ef4444"></span></span> -0.72</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '魔术师')">
+<td class="role-cell">魔术师</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.6%</td>
+<td>9.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:91.47182057830733%;background:#ef4444"></span></span> -0.91</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '情报员')">
+<td class="role-cell">情报员</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.9%</td>
+<td>6.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:91.9777858835587%;background:#ef4444"></span></span> -0.92</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '侦探')">
+<td class="role-cell">侦探</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">48.3%</td>
+<td>8.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:96.40099350682836%;background:#ef4444"></span></span> -0.96</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('特别行动单人排位', '2026-04-22', '船员')">
+<td class="role-cell">船员</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">45.4%</td>
+<td>6.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#ef4444"></span></span> -1.32</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr></tbody></table><div class="changes-section">
+<div class="changes-title">📈 显著异动（胜率变化≥5% 或 登场率变化≥10%）</div><span class="change-tag down">奶龙 -24.1%</span><span class="change-tag down">蛇精 -20.5%</span><span class="change-tag down">伪人 -17.9%</span><span class="change-tag up">市长 +17.8%</span><span class="change-tag down">内鬼 -14%</span><span class="change-tag up">幻影 +14%</span><span class="change-tag down">丘比特 -13.6%</span><span class="change-tag down">清洁工 -12.8%</span></div><div class="role-detail" id="detail-特别行动单人排位"></div></div><div class="mode-section" id="section-巅峰赛">
+<div class="mode-title">Peak Tournament <span class="mode-badge">2026-04-22</span></div>
+<div class="ai-summary">巅峰赛整体表现：T1顶尖角色包括双面人(43%)、幻影(20.5%)、摄魂怪(48.4%)；弱势角色需关注国王(33.6%)、哪吒(34.3%)、黑客(35.5%)；最大异动时间刺客上升了18.8%</div>
+<div class="legend">
+<div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>T1 顶尖</div>
+<div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>T2 强势</div>
+<div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>T3 平稳</div>
+<div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>T4 弱势</div>
+</div>
+<div class="filter-bar">
+<input type="text" id="search-巅峰赛" placeholder="搜索角色..." oninput="filterTable('巅峰赛')">
+<select id="faction-巅峰赛" onchange="filterTable('巅峰赛')">
+<option value="">全部阵营</option>
+<option value="astronaut">Astronaut</option>
+<option value="invader">Invader</option>
+<option value="neutral">Neutral</option>
+</select>
+<select id="tier-巅峰赛" onchange="filterTable('巅峰赛')">
+<option value="">全部等级</option>
+<option value="T1">T1 顶尖</option>
+<option value="T2">T2 强势</option>
+<option value="T3">T3 平稳</option>
+<option value="T4">T4 弱势</option>
+</select>
+</div>
+<table class="tier-table" id="table-巅峰赛">
+<thead><tr>
+<th>角色</th><th>阵营</th><th>胜率</th><th>登场率</th><th>综合分</th><th>等级</th></tr></thead>
+<tbody><tr onclick="showDetail('巅峰赛', '2026-04-22', '双面人')">
+<td class="role-cell">双面人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">43%</td>
+<td>95%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.88</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '幻影')">
+<td class="role-cell">幻影</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">20.5%</td>
+<td>35.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.31</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '摄魂怪')">
+<td class="role-cell">摄魂怪</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">48.4%</td>
+<td>32.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.30</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '时间刺客')">
+<td class="role-cell">时间刺客</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="positive">54%</td>
+<td>11.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#4ade80"></span></span> 1.08</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '清洁工')">
+<td class="role-cell">清洁工</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">47%</td>
+<td>15.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:80.71424370044124%;background:#4ade80"></span></span> 0.81</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '女帝')">
+<td class="role-cell">女帝</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">48.9%</td>
+<td>10.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:75.70907783767892%;background:#4ade80"></span></span> 0.76</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '换票师')">
+<td class="role-cell">换票师</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">49.6%</td>
+<td>30.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:67.76833810823318%;background:#4ade80"></span></span> 0.68</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '小丑')">
+<td class="role-cell">小丑</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">17.1%</td>
+<td>13.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:60.34003396814887%;background:#4ade80"></span></span> 0.60</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '恶魔')">
+<td class="role-cell">恶魔</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">20.5%</td>
+<td>10%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:58.81783631571715%;background:#4ade80"></span></span> 0.59</td>
+<td><span class="tier-badge" style="background:#ef444420;color:#ef4444">T1 顶尖</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '赏金猎人')">
+<td class="role-cell">赏金猎人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.2%</td>
+<td>9.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:40.268655561357555%;background:#4ade80"></span></span> 0.40</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '欺诈师')">
+<td class="role-cell">欺诈师</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.3%</td>
+<td>9.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:38.36936365933587%;background:#4ade80"></span></span> 0.38</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '闪光弹')">
+<td class="role-cell">闪光弹</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">45.8%</td>
+<td>6.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:31.400745450283907%;background:#4ade80"></span></span> 0.31</td>
+<td><span class="tier-badge" style="background:#f59e0b20;color:#f59e0b">T2 强势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '搬运工')">
+<td class="role-cell">搬运工</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.9%</td>
+<td>7.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:29.60940852318556%;background:#4ade80"></span></span> 0.30</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '警长')">
+<td class="role-cell">警长</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.7%</td>
+<td>99.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:29.20271382220079%;background:#4ade80"></span></span> 0.29</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '忍者')">
+<td class="role-cell">忍者</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.7%</td>
+<td>9.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:28.226553501728507%;background:#4ade80"></span></span> 0.28</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '勇者')">
+<td class="role-cell">勇者</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">47.2%</td>
+<td>23.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:27.858707707464596%;background:#4ade80"></span></span> 0.28</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '伪人')">
+<td class="role-cell">伪人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">44.9%</td>
+<td>6.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:27.312815918298128%;background:#4ade80"></span></span> 0.27</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '诱饵')">
+<td class="role-cell">诱饵</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.4%</td>
+<td>99.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:26.384225911328784%;background:#4ade80"></span></span> 0.26</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '考古学家')">
+<td class="role-cell">考古学家</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">47.2%</td>
+<td>20.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:19.811230445600653%;background:#4ade80"></span></span> 0.20</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '狙击手')">
+<td class="role-cell">狙击手</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">43.7%</td>
+<td>6.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:17.22147270790243%;background:#4ade80"></span></span> 0.17</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '大胃王')">
+<td class="role-cell">大胃王</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">12.2%</td>
+<td>11.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:16.78789724236738%;background:#4ade80"></span></span> 0.17</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '变色龙')">
+<td class="role-cell">变色龙</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">42.5%</td>
+<td>8.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:13.013572717280045%;background:#4ade80"></span></span> 0.13</td>
+<td><span class="tier-badge" style="background:#22c55e20;color:#22c55e">T3 平稳</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '时间之主')">
+<td class="role-cell">时间之主</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">45.7%</td>
+<td>21.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:0.6351710298771435%;background:#4ade80"></span></span> 0.01</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '单面人')">
+<td class="role-cell">单面人</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.3%</td>
+<td>37.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:10.055662009387323%;background:#ef4444"></span></span> -0.10</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '卧底')">
+<td class="role-cell">卧底</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">45.6%</td>
+<td>14.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:13.842469976900482%;background:#ef4444"></span></span> -0.14</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '暗之巨人')">
+<td class="role-cell">暗之巨人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.9%</td>
+<td>7.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:18.97911123047454%;background:#ef4444"></span></span> -0.19</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '焰火师')">
+<td class="role-cell">焰火师</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">9.4%</td>
+<td>9.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:21.717777412836075%;background:#ef4444"></span></span> -0.22</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '女巫')">
+<td class="role-cell">女巫</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">38.4%</td>
+<td>10.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:22.573908228107417%;background:#ef4444"></span></span> -0.23</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '光之巨人')">
+<td class="role-cell">光之巨人</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.1%</td>
+<td>29.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:22.891381729432208%;background:#ef4444"></span></span> -0.23</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '间谍')">
+<td class="role-cell">间谍</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40.7%</td>
+<td>6.5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:24.186593746347857%;background:#ef4444"></span></span> -0.24</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '武士')">
+<td class="role-cell">武士</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.3%</td>
+<td>47.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:27.579187092610198%;background:#ef4444"></span></span> -0.28</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '怪兽')">
+<td class="role-cell">怪兽</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">8.9%</td>
+<td>9.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:28.446005283828125%;background:#ef4444"></span></span> -0.28</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '工程师')">
+<td class="role-cell">工程师</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">44.1%</td>
+<td>22.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:29.066600172717628%;background:#ef4444"></span></span> -0.29</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '咒术师')">
+<td class="role-cell">咒术师</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">38.5%</td>
+<td>8.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:30.876186350163596%;background:#ef4444"></span></span> -0.31</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '守望者')">
+<td class="role-cell">守望者</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.1%</td>
+<td>30.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:31.13711519221679%;background:#ef4444"></span></span> -0.31</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '猎人')">
+<td class="role-cell">猎人</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.5%</td>
+<td>26.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:33.97253841026511%;background:#ef4444"></span></span> -0.34</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '捣蛋鬼')">
+<td class="role-cell">捣蛋鬼</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="">40%</td>
+<td>5.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:36.134005014835004%;background:#ef4444"></span></span> -0.36</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '守卫')">
+<td class="role-cell">守卫</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.9%</td>
+<td>19.9%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:36.79439460543842%;background:#ef4444"></span></span> -0.37</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '老兵')">
+<td class="role-cell">老兵</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.7%</td>
+<td>23.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:41.824125790313346%;background:#ef4444"></span></span> -0.42</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '保安')">
+<td class="role-cell">保安</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">43.9%</td>
+<td>16.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:42.78907239101004%;background:#ef4444"></span></span> -0.43</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '市长')">
+<td class="role-cell">市长</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">42.9%</td>
+<td>22%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:43.60730628964033%;background:#ef4444"></span></span> -0.44</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '吸血鬼')">
+<td class="role-cell">吸血鬼</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">36%</td>
+<td>8.7%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:49.00510670854034%;background:#ef4444"></span></span> -0.49</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '饕餮')">
+<td class="role-cell">饕餮</td>
+<td style="color:#888;font-size:12px">Neutral</td>
+<td class="negative">4.7%</td>
+<td>11.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:50.02922064851335%;background:#ef4444"></span></span> -0.50</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '孙悟空')">
+<td class="role-cell">孙悟空</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">37.9%</td>
+<td>5%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:55.52363479152562%;background:#ef4444"></span></span> -0.56</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '守夜人')">
+<td class="role-cell">守夜人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">36%</td>
+<td>7.4%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:59.20435719729645%;background:#ef4444"></span></span> -0.59</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '医生')">
+<td class="role-cell">医生</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">39.3%</td>
+<td>27.2%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:61.25721819730534%;background:#ef4444"></span></span> -0.61</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '魔术师')">
+<td class="role-cell">魔术师</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">41.7%</td>
+<td>16.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:64.72180248163812%;background:#ef4444"></span></span> -0.65</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '管道工')">
+<td class="role-cell">管道工</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="">40.1%</td>
+<td>21.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:71.32433264614333%;background:#ef4444"></span></span> -0.71</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '侦探')">
+<td class="role-cell">侦探</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.6%</td>
+<td>23.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:75.54442936355679%;background:#ef4444"></span></span> -0.76</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '小黑')">
+<td class="role-cell">小黑</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">34.8%</td>
+<td>5.3%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:75.65324677681578%;background:#ef4444"></span></span> -0.76</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '预言家')">
+<td class="role-cell">预言家</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.5%</td>
+<td>22.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:80.62678449641358%;background:#ef4444"></span></span> -0.81</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '情报员')">
+<td class="role-cell">情报员</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.4%</td>
+<td>20%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:87.02806898755289%;background:#ef4444"></span></span> -0.87</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '狱卒')">
+<td class="role-cell">狱卒</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">38.2%</td>
+<td>18%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:91.97315559582147%;background:#ef4444"></span></span> -0.92</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '收债人')">
+<td class="role-cell">收债人</td>
+<td style="color:#888;font-size:12px">Invader</td>
+<td class="negative">30.2%</td>
+<td>7.1%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:94.88152531065133%;background:#ef4444"></span></span> -0.95</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '黑客')">
+<td class="role-cell">黑客</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">35.5%</td>
+<td>22.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#ef4444"></span></span> -1.02</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '哪吒')">
+<td class="role-cell">哪吒</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">34.3%</td>
+<td>20.8%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#ef4444"></span></span> -1.15</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr><tr onclick="showDetail('巅峰赛', '2026-04-22', '国王')">
+<td class="role-cell">国王</td>
+<td style="color:#888;font-size:12px">Astronaut</td>
+<td class="negative">33.6%</td>
+<td>21.6%</td>
+<td><span class="score-bar"><span class="score-fill" style="width:100%;background:#ef4444"></span></span> -1.18</td>
+<td><span class="tier-badge" style="background:#6b728020;color:#6b7280">T4 弱势</span></td>
+</tr></tbody></table><div class="changes-section">
+<div class="changes-title">📈 显著异动（胜率变化≥5% 或 登场率变化≥10%）</div><span class="change-tag up">时间刺客 +18.8%</span><span class="change-tag down">侦探 -18%</span><span class="change-tag down">预言家 -16.1%</span><span class="change-tag down">国王 -15.9%</span><span class="change-tag down">黑客 -14.8%</span><span class="change-tag up">孙悟空 +14.5%</span><span class="change-tag down">老兵 -13.8%</span><span class="change-tag up">闪光弹 +13.7%</span></div><div class="role-detail" id="detail-巅峰赛"></div></div><script>
+function showDetail(mode, date, name) {
+    const detail = document.getElementById('detail-' + mode);
+    const name2 = encodeURIComponent(name);
+    // For now, show basic detail - actual analysis would need server-side processing
+    const roles = window.roleData?.[mode]?.[date] || [];
+    const role = roles.find(r => r.name === decodeURIComponent(name2));
+    if (role) {
+        detail.innerHTML = '<div class="detail-header"><span class="detail-name">' + role.name + '</span><span class="detail-faction">' + role.faction + '</span></div>' +
+            '<div class="detail-metrics"><div class="metric"><div class="metric-value">' + role.winRate + '%</div><div class="metric-label">胜率</div></div>' +
+            '<div class="metric"><div class="metric-value">' + role.pickRate + '%</div><div class="metric-label">登场率</div></div>' +
+            '<div class="metric"><div class="metric-value" style="color:' + role.tier.color + '">' + role.tier.tier + '</div><div class="metric-label">等级</div></div></div>' +
+            '<div class="detail-analysis">' + role.analysis + '</div>';
+        detail.classList.add('active');
+    }
+}
+
+function filterTable(mode) {
+    const search = document.getElementById('search-' + mode).value.toLowerCase();
+    const faction = document.getElementById('faction-' + mode).value;
+    const tier = document.getElementById('tier-' + mode).value;
+    const rows = document.querySelectorAll('#table-' + mode + ' tbody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const factionMatch = !faction || row.cells[1].textContent.toLowerCase().includes(faction);
+        const tierMatch = !tier || row.cells[5].textContent.includes(tier);
+        row.style.display = (text.includes(search) && factionMatch && tierMatch) ? '' : 'none';
+    });
+}
+
+window.roleData = {};
+</script></body></html>
