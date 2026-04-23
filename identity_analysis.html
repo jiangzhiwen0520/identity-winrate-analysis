@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Identity Win Rate Analysis</title>
+<style>
+body { background: #0f1420; color: #fff; font-family: sans-serif; padding: 20px; }
+h1 { text-align: center; color: #4ade80; }
+h2 { color: #60a5fa; border-bottom: 1px solid #333; padding-bottom: 8px; }
+.date-info { text-align: center; color: #888; margin-bottom: 30px; }
+.changes { background: #151b2e; border-radius: 12px; padding: 20px; margin-bottom: 30px; }
+.change-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #222; }
+.change-item:last-child { border-bottom: none; }
+.role-name { font-weight: bold; min-width: 120px; }
+.role-mode { color: #888; font-size: 14px; min-width: 150px; }
+.positive { color: #4ade80; }
+.negative { color: #f87171; }
+.neutral { color: #fbbf24; }
+.change-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 10px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+th { background: #1e293b; padding: 12px; text-align: left; }
+td { padding: 10px; border-bottom: 1px solid #222; }
+tr:hover { background: #1e293b; }
+.up { color: #4ade80; }
+.down { color: #f87171; }
+</style></head><body>
+<h1>🎮 Identity 胜率分析</h1>
+<div class="date-info">Gods Ranking: 2026-04-23_pm<br>Special Ops Solo: 2026-04-23_pm<br>Peak Tournament: 2026-04-23_pm<br></div><h2>📊 异动摘要 (04-23早→下午 显著变化)</h2>
+<div class="changes"><div class="change-item">
+            <span class="role-name">守夜人</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 36% <span class="change-badge">-18.1%</span></span>
+            <span class="negative">登场 7.4% <span class="change-badge">-0.5%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">女巫</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 38.4% <span class="change-badge">-16.5%</span></span>
+            <span class="negative">登场 10.4% <span class="change-badge">-14.7%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">幻影</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="positive">胜率 20.5% <span class="change-badge">+15.1%</span></span>
+            <span class="positive">登场 35.7% <span class="change-badge">+19.9%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">幻影</span>
+            <span class="role-mode">[特别行动单人排位]</span>
+            <span class="positive">胜率 23.2% <span class="change-badge">+14.1%</span></span>
+            <span class="positive">登场 15.3% <span class="change-badge">+5.7%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">吸血鬼</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 36% <span class="change-badge">-14%</span></span>
+            <span class="positive">登场 8.7% <span class="change-badge">+0.7%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">狙击手</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 43.7% <span class="change-badge">-13.4%</span></span>
+            <span class="negative">登场 6.7% <span class="change-badge">-1%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">收债人</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 30.2% <span class="change-badge">-12.9%</span></span>
+            <span class="positive">登场 7.1% <span class="change-badge">+1.3%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">小黑</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 34.8% <span class="change-badge">-12.5%</span></span>
+            <span class="positive">登场 5.3% <span class="change-badge">+0.9%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">考古学家</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="positive">胜率 47.2% <span class="change-badge">+12.2%</span></span>
+            <span class="negative">登场 20.2% <span class="change-badge">-4.1%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">幻影</span>
+            <span class="role-mode">[诸神排位]</span>
+            <span class="positive">胜率 15.9% <span class="change-badge">+11.6%</span></span>
+            <span class="positive">登场 2.3% <span class="change-badge">+0.3%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">赏金猎人</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 44.2% <span class="change-badge">-11.3%</span></span>
+            <span class="negative">登场 9.6% <span class="change-badge">-0.3%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">孙悟空</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 37.9% <span class="change-badge">-11.3%</span></span>
+            <span class="positive">登场 5% <span class="change-badge">+0.2%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">换票师</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="positive">胜率 49.6% <span class="change-badge">+11.2%</span></span>
+            <span class="negative">登场 30.4% <span class="change-badge">-0.4%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">女帝</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 48.9% <span class="change-badge">-10.9%</span></span>
+            <span class="positive">登场 10.3% <span class="change-badge">+2.1%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">灰原哀</span>
+            <span class="role-mode">[诸神排位]</span>
+            <span class="negative">胜率 47.3% <span class="change-badge">-10.4%</span></span>
+            <span class="neutral">登场 0.5% <span class="change-badge">0%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">双面人</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 43% <span class="change-badge">-8.8%</span></span>
+            <span class="positive">登场 95% <span class="change-badge">+3.1%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">忍者</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 42.7% <span class="change-badge">-8.6%</span></span>
+            <span class="positive">登场 9.9% <span class="change-badge">+0.8%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">伪人</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 44.9% <span class="change-badge">-8.5%</span></span>
+            <span class="positive">登场 6.8% <span class="change-badge">+2.2%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">饕餮</span>
+            <span class="role-mode">[诸神排位]</span>
+            <span class="positive">胜率 19.5% <span class="change-badge">+8.3%</span></span>
+            <span class="positive">登场 1.6% <span class="change-badge">+0.2%</span></span>
+        </div><div class="change-item">
+            <span class="role-name">摄魂怪</span>
+            <span class="role-mode">[巅峰赛]</span>
+            <span class="negative">胜率 48.4% <span class="change-badge">-8.3%</span></span>
+            <span class="negative">登场 32.9% <span class="change-badge">-0.1%</span></span>
+        </div></div><h2>Gods Ranking - 2026-04-23_pm</h2>
+    <div class="table-wrap">
+    <table>
+    <tr><th>角色</th><th>阵营</th><th>胜率</th><th>变化</th><th>登场率</th><th>变化</th></tr><tr>
+            <td>柯南</td>
+            <td>Astronaut</td>
+            <td class="down">56.9%</td>
+            <td class="down">-1.5%</td>
+            <td class="">5.4%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>武士</td>
+            <td>Astronaut</td>
+            <td class="down">53.2%</td>
+            <td class="down">-2.2%</td>
+            <td class="down">2.1%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>时间之主</td>
+            <td>Astronaut</td>
+            <td class="down">53.1%</td>
+            <td class="down">-0.3%</td>
+            <td class="down">2.4%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>毛利兰</td>
+            <td>Astronaut</td>
+            <td class="down">52.9%</td>
+            <td class="down">-1%</td>
+            <td class="down">0.7%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>葫芦兄弟</td>
+            <td>Astronaut</td>
+            <td class="down">52.8%</td>
+            <td class="down">-2.5%</td>
+            <td class="down">8.4%</td>
+            <td class="down">-0.8%</td>
+        </tr><tr>
+            <td>诱饵</td>
+            <td>Astronaut</td>
+            <td class="up">52.1%</td>
+            <td class="up">+0.4%</td>
+            <td class="down">1.7%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>逍遥</td>
+            <td>Astronaut</td>
+            <td class="up">52%</td>
+            <td class="up">+2.8%</td>
+            <td class="down">0.6%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>国王</td>
+            <td>Astronaut</td>
+            <td class="up">51.9%</td>
+            <td class="up">+2.9%</td>
+            <td class="up">1.5%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>勇者</td>
+            <td>Astronaut</td>
+            <td class="down">51.1%</td>
+            <td class="down">-1.9%</td>
+            <td class="up">1.5%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>卧底</td>
+            <td>Astronaut</td>
+            <td class="down">50.8%</td>
+            <td class="down">-1.3%</td>
+            <td class="down">0.9%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>法官</td>
+            <td>Astronaut</td>
+            <td class="up">50.4%</td>
+            <td class="up">+0.5%</td>
+            <td class="up">1.3%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>换票师</td>
+            <td>Astronaut</td>
+            <td class="up">49%</td>
+            <td class="up">+3.6%</td>
+            <td class="up">2.2%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>哪吒</td>
+            <td>Astronaut</td>
+            <td class="down">48.3%</td>
+            <td class="down">-1.7%</td>
+            <td class="down">3.4%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>警长</td>
+            <td>Astronaut</td>
+            <td class="down">48.1%</td>
+            <td class="down">-1%</td>
+            <td class="down">33.3%</td>
+            <td class="down">-1%</td>
+        </tr><tr>
+            <td>考古学家</td>
+            <td>Astronaut</td>
+            <td class="down">48.1%</td>
+            <td class="down">-4.9%</td>
+            <td class="">0.7%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>单面人</td>
+            <td>Astronaut</td>
+            <td class="up">48%</td>
+            <td class="up">+0.7%</td>
+            <td class="up">9.2%</td>
+            <td class="up">+0.4%</td>
+        </tr><tr>
+            <td>灰原哀</td>
+            <td>Astronaut</td>
+            <td class="down">47.3%</td>
+            <td class="down">-10.4%</td>
+            <td class="">0.5%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>光之巨人</td>
+            <td>Astronaut</td>
+            <td class="down">47%</td>
+            <td class="down">-0.3%</td>
+            <td class="">1.9%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>狱卒</td>
+            <td>Astronaut</td>
+            <td class="down">46.6%</td>
+            <td class="down">-3.8%</td>
+            <td class="down">1.1%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>守望者</td>
+            <td>Astronaut</td>
+            <td class="up">46.3%</td>
+            <td class="up">+1.1%</td>
+            <td class="">8.3%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>船员</td>
+            <td>Astronaut</td>
+            <td class="down">45.1%</td>
+            <td class="down">-0.7%</td>
+            <td class="down">199.9%</td>
+            <td class="down">-10.5%</td>
+        </tr><tr>
+            <td>老兵</td>
+            <td>Astronaut</td>
+            <td class="down">43.3%</td>
+            <td class="down">-2.4%</td>
+            <td class="down">7.9%</td>
+            <td class="down">-1.1%</td>
+        </tr><tr>
+            <td>医生</td>
+            <td>Astronaut</td>
+            <td class="down">43.1%</td>
+            <td class="down">-0.5%</td>
+            <td class="up">8.9%</td>
+            <td class="up">+0.3%</td>
+        </tr><tr>
+            <td>情报员</td>
+            <td>Astronaut</td>
+            <td class="down">42.7%</td>
+            <td class="down">-0.7%</td>
+            <td class="down">3.7%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>侦探</td>
+            <td>Astronaut</td>
+            <td class="down">41.7%</td>
+            <td class="down">-0.9%</td>
+            <td class="down">2.5%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>魔术师</td>
+            <td>Astronaut</td>
+            <td class="down">41.5%</td>
+            <td class="down">-6.6%</td>
+            <td class="down">1.5%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>守卫</td>
+            <td>Astronaut</td>
+            <td class="down">41.4%</td>
+            <td class="down">-4.2%</td>
+            <td class="down">3%</td>
+            <td class="down">-0.3%</td>
+        </tr><tr>
+            <td>猎人</td>
+            <td>Astronaut</td>
+            <td class="up">40.5%</td>
+            <td class="up">+1%</td>
+            <td class="down">3.7%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>预言家</td>
+            <td>Astronaut</td>
+            <td class="up">40.4%</td>
+            <td class="up">+0.5%</td>
+            <td class="down">13.1%</td>
+            <td class="down">-0.9%</td>
+        </tr><tr>
+            <td>管道工</td>
+            <td>Astronaut</td>
+            <td class="up">40.3%</td>
+            <td class="up">+1.3%</td>
+            <td class="down">5.9%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>保安</td>
+            <td>Astronaut</td>
+            <td class="down">40.3%</td>
+            <td class="down">-4%</td>
+            <td class="down">2.5%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>黑客</td>
+            <td>Astronaut</td>
+            <td class="down">38.2%</td>
+            <td class="down">-1.5%</td>
+            <td class="down">6%</td>
+            <td class="down">-0.5%</td>
+        </tr><tr>
+            <td>工程师</td>
+            <td>Astronaut</td>
+            <td class="down">37.3%</td>
+            <td class="down">-0.9%</td>
+            <td class="down">6.1%</td>
+            <td class="down">-0.5%</td>
+        </tr><tr>
+            <td>市长</td>
+            <td>Astronaut</td>
+            <td class="up">37.3%</td>
+            <td class="up">+2.7%</td>
+            <td class="down">1.8%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>蛇精</td>
+            <td>Invader</td>
+            <td class="up">60.6%</td>
+            <td class="up">+3.7%</td>
+            <td class="down">0.1%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>教父</td>
+            <td>Invader</td>
+            <td class="up">52.4%</td>
+            <td class="up">+2.2%</td>
+            <td class="">4.6%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>女帝</td>
+            <td>Invader</td>
+            <td class="up">50.9%</td>
+            <td class="up">+4%</td>
+            <td class="up">1.4%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>收割者</td>
+            <td>Invader</td>
+            <td class="down">50.8%</td>
+            <td class="down">-2%</td>
+            <td class="down">0.7%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>熊大熊二</td>
+            <td>Invader</td>
+            <td class="down">50.2%</td>
+            <td class="down">-2%</td>
+            <td class="down">0.7%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>赏金猎人</td>
+            <td>Invader</td>
+            <td class="up">48.2%</td>
+            <td class="up">+1.1%</td>
+            <td class="down">3%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>鬼新娘</td>
+            <td>Invader</td>
+            <td class="">48.1%</td>
+            <td class="">0%</td>
+            <td class="down">1.2%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>忍者</td>
+            <td>Invader</td>
+            <td class="up">47.6%</td>
+            <td class="up">+0.2%</td>
+            <td class="down">2.1%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>小黑</td>
+            <td>Invader</td>
+            <td class="up">47.3%</td>
+            <td class="up">+1.6%</td>
+            <td class="up">0.3%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>时间刺客</td>
+            <td>Invader</td>
+            <td class="up">46.5%</td>
+            <td class="up">+4%</td>
+            <td class="up">2.6%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>摄魂怪</td>
+            <td>Invader</td>
+            <td class="up">46.1%</td>
+            <td class="up">+0.7%</td>
+            <td class="down">5.2%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>吸血鬼</td>
+            <td>Invader</td>
+            <td class="up">45.6%</td>
+            <td class="up">+1.7%</td>
+            <td class="down">1.6%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>伪人</td>
+            <td>Invader</td>
+            <td class="down">44.4%</td>
+            <td class="down">-0.4%</td>
+            <td class="up">2.4%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>暗之巨人</td>
+            <td>Invader</td>
+            <td class="up">44.3%</td>
+            <td class="up">+0.3%</td>
+            <td class="up">1.1%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>双面人</td>
+            <td>Invader</td>
+            <td class="up">44.1%</td>
+            <td class="up">+0.5%</td>
+            <td class="down">13.3%</td>
+            <td class="down">-0.3%</td>
+        </tr><tr>
+            <td>欺诈师</td>
+            <td>Invader</td>
+            <td class="down">43.4%</td>
+            <td class="down">-1.5%</td>
+            <td class="down">1.5%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>清洁工</td>
+            <td>Invader</td>
+            <td class="down">42.6%</td>
+            <td class="down">-1.7%</td>
+            <td class="down">6.8%</td>
+            <td class="down">-0.6%</td>
+        </tr><tr>
+            <td>捣蛋鬼</td>
+            <td>Invader</td>
+            <td class="down">42.6%</td>
+            <td class="down">-0.9%</td>
+            <td class="">0.5%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>守夜人</td>
+            <td>Invader</td>
+            <td class="up">42.4%</td>
+            <td class="up">+7.6%</td>
+            <td class="down">1.7%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>狙击手</td>
+            <td>Invader</td>
+            <td class="up">41.9%</td>
+            <td class="up">+0.1%</td>
+            <td class="up">24.4%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>变色龙</td>
+            <td>Invader</td>
+            <td class="up">41.8%</td>
+            <td class="up">+1%</td>
+            <td class="up">36.2%</td>
+            <td class="up">+0.4%</td>
+        </tr><tr>
+            <td>女巫</td>
+            <td>Invader</td>
+            <td class="down">41.6%</td>
+            <td class="down">-4.9%</td>
+            <td class="down">4.2%</td>
+            <td class="down">-1.4%</td>
+        </tr><tr>
+            <td>收债人</td>
+            <td>Invader</td>
+            <td class="up">40.9%</td>
+            <td class="up">+4.8%</td>
+            <td class="">1%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>孙悟空</td>
+            <td>Invader</td>
+            <td class="up">40.8%</td>
+            <td class="up">+0.1%</td>
+            <td class="down">2.5%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>闪光弹</td>
+            <td>Invader</td>
+            <td class="up">40.6%</td>
+            <td class="up">+0.7%</td>
+            <td class="up">1.5%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>间谍</td>
+            <td>Invader</td>
+            <td class="down">39.7%</td>
+            <td class="down">-3.2%</td>
+            <td class="down">3.8%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>咒术师</td>
+            <td>Invader</td>
+            <td class="up">39.5%</td>
+            <td class="up">+1.5%</td>
+            <td class="down">4.7%</td>
+            <td class="down">-0.5%</td>
+        </tr><tr>
+            <td>内鬼</td>
+            <td>Invader</td>
+            <td class="">38.1%</td>
+            <td class="">0%</td>
+            <td class="">5.2%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>搬运工</td>
+            <td>Invader</td>
+            <td class="down">36.6%</td>
+            <td class="down">-5%</td>
+            <td class="down">1.1%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>幸存者</td>
+            <td>Neutral</td>
+            <td class="down">72.4%</td>
+            <td class="down">-1.6%</td>
+            <td class="down">5.5%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>墙头草</td>
+            <td>Neutral</td>
+            <td class="up">63.6%</td>
+            <td class="up">+3.2%</td>
+            <td class="down">1.3%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>丘比特</td>
+            <td>Neutral</td>
+            <td class="down">51.4%</td>
+            <td class="down">-2.7%</td>
+            <td class="down">2.3%</td>
+            <td class="down">-0.5%</td>
+        </tr><tr>
+            <td>小蜜蜂</td>
+            <td>Neutral</td>
+            <td class="down">46.5%</td>
+            <td class="down">-2.4%</td>
+            <td class="down">7%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>神子</td>
+            <td>Neutral</td>
+            <td class="up">31.7%</td>
+            <td class="up">+4.4%</td>
+            <td class="down">0.4%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>怪盗</td>
+            <td>Neutral</td>
+            <td class="up">28.2%</td>
+            <td class="up">+1.7%</td>
+            <td class="">1.1%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>奶龙</td>
+            <td>Neutral</td>
+            <td class="up">26.8%</td>
+            <td class="up">+5.1%</td>
+            <td class="">0.6%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>恶魔</td>
+            <td>Neutral</td>
+            <td class="down">25.7%</td>
+            <td class="down">-2.3%</td>
+            <td class="up">1.5%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>饕餮</td>
+            <td>Neutral</td>
+            <td class="up">19.5%</td>
+            <td class="up">+8.3%</td>
+            <td class="up">1.6%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>无面人</td>
+            <td>Neutral</td>
+            <td class="up">19.1%</td>
+            <td class="up">+1.2%</td>
+            <td class="up">2.5%</td>
+            <td class="up">+0.4%</td>
+        </tr><tr>
+            <td>大胃王</td>
+            <td>Neutral</td>
+            <td class="down">17.8%</td>
+            <td class="down">-0.1%</td>
+            <td class="down">9.3%</td>
+            <td class="down">-1.2%</td>
+        </tr><tr>
+            <td>小丑</td>
+            <td>Neutral</td>
+            <td class="up">16.3%</td>
+            <td class="up">+2.1%</td>
+            <td class="down">4.7%</td>
+            <td class="down">-0.6%</td>
+        </tr><tr>
+            <td>幻影</td>
+            <td>Neutral</td>
+            <td class="up">15.9%</td>
+            <td class="up">+11.6%</td>
+            <td class="up">2.3%</td>
+            <td class="up">+0.3%</td>
+        </tr><tr>
+            <td>怪兽</td>
+            <td>Neutral</td>
+            <td class="down">15.5%</td>
+            <td class="down">-1.5%</td>
+            <td class="up">16.2%</td>
+            <td class="up">+0.9%</td>
+        </tr><tr>
+            <td>焰火师</td>
+            <td>Neutral</td>
+            <td class="down">14.8%</td>
+            <td class="down">-5%</td>
+            <td class="down">4.3%</td>
+            <td class="down">-0.6%</td>
+        </tr></table></div><h2>Special Ops Solo - 2026-04-23_pm</h2>
+    <div class="table-wrap">
+    <table>
+    <tr><th>角色</th><th>阵营</th><th>胜率</th><th>变化</th><th>登场率</th><th>变化</th></tr><tr>
+            <td>卧底</td>
+            <td>Astronaut</td>
+            <td class="up">57.1%</td>
+            <td class="up">+1.4%</td>
+            <td class="up">4.9%</td>
+            <td class="up">+0.8%</td>
+        </tr><tr>
+            <td>毛利兰</td>
+            <td>Astronaut</td>
+            <td class="down">57.1%</td>
+            <td class="down">-5.4%</td>
+            <td class="down">9.6%</td>
+            <td class="down">-1%</td>
+        </tr><tr>
+            <td>时间之主</td>
+            <td>Astronaut</td>
+            <td class="down">55.9%</td>
+            <td class="down">-5.2%</td>
+            <td class="down">19.5%</td>
+            <td class="down">-3.6%</td>
+        </tr><tr>
+            <td>逍遥</td>
+            <td>Astronaut</td>
+            <td class="down">55.5%</td>
+            <td class="down">-1.3%</td>
+            <td class="down">8.5%</td>
+            <td class="down">-1.5%</td>
+        </tr><tr>
+            <td>柯南</td>
+            <td>Astronaut</td>
+            <td class="down">55.2%</td>
+            <td class="down">-5%</td>
+            <td class="up">37.7%</td>
+            <td class="up">+2.5%</td>
+        </tr><tr>
+            <td>葫芦兄弟</td>
+            <td>Astronaut</td>
+            <td class="down">55%</td>
+            <td class="down">-3.8%</td>
+            <td class="up">54.4%</td>
+            <td class="up">+2.9%</td>
+        </tr><tr>
+            <td>灰原哀</td>
+            <td>Astronaut</td>
+            <td class="down">53.8%</td>
+            <td class="down">-3.4%</td>
+            <td class="down">8.1%</td>
+            <td class="down">-0.3%</td>
+        </tr><tr>
+            <td>法官</td>
+            <td>Astronaut</td>
+            <td class="down">53.8%</td>
+            <td class="down">-1.8%</td>
+            <td class="up">14.8%</td>
+            <td class="up">+0.3%</td>
+        </tr><tr>
+            <td>武士</td>
+            <td>Astronaut</td>
+            <td class="down">53.6%</td>
+            <td class="down">-5.4%</td>
+            <td class="down">19.3%</td>
+            <td class="down">-0.9%</td>
+        </tr><tr>
+            <td>守卫</td>
+            <td>Astronaut</td>
+            <td class="down">53.4%</td>
+            <td class="down">-6.8%</td>
+            <td class="down">4.7%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>光之巨人</td>
+            <td>Astronaut</td>
+            <td class="down">53.3%</td>
+            <td class="down">-4.4%</td>
+            <td class="up">34.9%</td>
+            <td class="up">+2.2%</td>
+        </tr><tr>
+            <td>考古学家</td>
+            <td>Astronaut</td>
+            <td class="down">53.1%</td>
+            <td class="down">-2.9%</td>
+            <td class="up">7.5%</td>
+            <td class="up">+1.4%</td>
+        </tr><tr>
+            <td>警长</td>
+            <td>Astronaut</td>
+            <td class="down">53%</td>
+            <td class="down">-4.7%</td>
+            <td class="down">72.5%</td>
+            <td class="down">-4.8%</td>
+        </tr><tr>
+            <td>市长</td>
+            <td>Astronaut</td>
+            <td class="down">53%</td>
+            <td class="down">-3.1%</td>
+            <td class="">7.8%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>老兵</td>
+            <td>Astronaut</td>
+            <td class="down">52.8%</td>
+            <td class="down">-5.1%</td>
+            <td class="down">26.9%</td>
+            <td class="down">-3.8%</td>
+        </tr><tr>
+            <td>勇者</td>
+            <td>Astronaut</td>
+            <td class="down">52.6%</td>
+            <td class="down">-3.4%</td>
+            <td class="up">10.9%</td>
+            <td class="up">+0.5%</td>
+        </tr><tr>
+            <td>医生</td>
+            <td>Astronaut</td>
+            <td class="down">51.9%</td>
+            <td class="down">-3.5%</td>
+            <td class="up">27.6%</td>
+            <td class="up">+1.6%</td>
+        </tr><tr>
+            <td>守望者</td>
+            <td>Astronaut</td>
+            <td class="down">51.9%</td>
+            <td class="down">-5.1%</td>
+            <td class="">15.1%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>国王</td>
+            <td>Astronaut</td>
+            <td class="down">51.9%</td>
+            <td class="down">-4.6%</td>
+            <td class="up">9.8%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>单面人</td>
+            <td>Astronaut</td>
+            <td class="down">51.8%</td>
+            <td class="down">-4.1%</td>
+            <td class="up">51.1%</td>
+            <td class="up">+2.6%</td>
+        </tr><tr>
+            <td>狱卒</td>
+            <td>Astronaut</td>
+            <td class="down">51.7%</td>
+            <td class="down">-4.4%</td>
+            <td class="down">9.8%</td>
+            <td class="down">-0.6%</td>
+        </tr><tr>
+            <td>诱饵</td>
+            <td>Astronaut</td>
+            <td class="down">51.7%</td>
+            <td class="down">-4.9%</td>
+            <td class="up">12.9%</td>
+            <td class="up">+1.4%</td>
+        </tr><tr>
+            <td>保安</td>
+            <td>Astronaut</td>
+            <td class="down">51.2%</td>
+            <td class="down">-5%</td>
+            <td class="down">4%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>管道工</td>
+            <td>Astronaut</td>
+            <td class="down">51.1%</td>
+            <td class="down">-0.4%</td>
+            <td class="up">6.4%</td>
+            <td class="up">+1%</td>
+        </tr><tr>
+            <td>换票师</td>
+            <td>Astronaut</td>
+            <td class="down">50.8%</td>
+            <td class="down">-3.5%</td>
+            <td class="up">17.4%</td>
+            <td class="up">+1.7%</td>
+        </tr><tr>
+            <td>黑客</td>
+            <td>Astronaut</td>
+            <td class="down">50.5%</td>
+            <td class="down">-4.7%</td>
+            <td class="up">6.5%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>预言家</td>
+            <td>Astronaut</td>
+            <td class="down">50.1%</td>
+            <td class="down">-4.1%</td>
+            <td class="down">20.8%</td>
+            <td class="down">-1.1%</td>
+        </tr><tr>
+            <td>工程师</td>
+            <td>Astronaut</td>
+            <td class="down">50%</td>
+            <td class="down">-4.5%</td>
+            <td class="up">14%</td>
+            <td class="up">+1.9%</td>
+        </tr><tr>
+            <td>猎人</td>
+            <td>Astronaut</td>
+            <td class="down">50%</td>
+            <td class="down">-2.3%</td>
+            <td class="up">12%</td>
+            <td class="up">+1.3%</td>
+        </tr><tr>
+            <td>哪吒</td>
+            <td>Astronaut</td>
+            <td class="down">49.9%</td>
+            <td class="down">-4.5%</td>
+            <td class="down">20.5%</td>
+            <td class="down">-1.5%</td>
+        </tr><tr>
+            <td>情报员</td>
+            <td>Astronaut</td>
+            <td class="down">48.9%</td>
+            <td class="down">-5.8%</td>
+            <td class="down">6.7%</td>
+            <td class="down">-1.8%</td>
+        </tr><tr>
+            <td>魔术师</td>
+            <td>Astronaut</td>
+            <td class="down">48.6%</td>
+            <td class="down">-6.4%</td>
+            <td class="down">9.1%</td>
+            <td class="down">-0.6%</td>
+        </tr><tr>
+            <td>侦探</td>
+            <td>Astronaut</td>
+            <td class="down">48.3%</td>
+            <td class="down">-2.2%</td>
+            <td class="up">8.4%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>船员</td>
+            <td>Astronaut</td>
+            <td class="down">45.4%</td>
+            <td class="down">-4.5%</td>
+            <td class="down">6.1%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>鬼新娘</td>
+            <td>Invader</td>
+            <td class="up">38.1%</td>
+            <td class="up">+1.7%</td>
+            <td class="up">5.1%</td>
+            <td class="up">+0.3%</td>
+        </tr><tr>
+            <td>教父</td>
+            <td>Invader</td>
+            <td class="up">37.6%</td>
+            <td class="up">+2.8%</td>
+            <td class="down">14.6%</td>
+            <td class="down">-0.5%</td>
+        </tr><tr>
+            <td>摄魂怪</td>
+            <td>Invader</td>
+            <td class="up">36.1%</td>
+            <td class="up">+2.1%</td>
+            <td class="up">17.1%</td>
+            <td class="up">+0.5%</td>
+        </tr><tr>
+            <td>双面人</td>
+            <td>Invader</td>
+            <td class="up">35.5%</td>
+            <td class="up">+1.4%</td>
+            <td class="up">35.8%</td>
+            <td class="up">+1.6%</td>
+        </tr><tr>
+            <td>收割者</td>
+            <td>Invader</td>
+            <td class="up">35.5%</td>
+            <td class="up">+3.7%</td>
+            <td class="down">6.5%</td>
+            <td class="down">-0.3%</td>
+        </tr><tr>
+            <td>女帝</td>
+            <td>Invader</td>
+            <td class="up">35.3%</td>
+            <td class="up">+2.4%</td>
+            <td class="down">5.4%</td>
+            <td class="down">-3.9%</td>
+        </tr><tr>
+            <td>熊大熊二</td>
+            <td>Invader</td>
+            <td class="down">34.4%</td>
+            <td class="down">-0.2%</td>
+            <td class="down">3.9%</td>
+            <td class="down">-0.3%</td>
+        </tr><tr>
+            <td>赏金猎人</td>
+            <td>Invader</td>
+            <td class="up">33.4%</td>
+            <td class="up">+3.7%</td>
+            <td class="up">15.3%</td>
+            <td class="up">+2.6%</td>
+        </tr><tr>
+            <td>时间刺客</td>
+            <td>Invader</td>
+            <td class="up">32.8%</td>
+            <td class="up">+2%</td>
+            <td class="down">5.9%</td>
+            <td class="down">-0.5%</td>
+        </tr><tr>
+            <td>吸血鬼</td>
+            <td>Invader</td>
+            <td class="up">32.4%</td>
+            <td class="up">+3%</td>
+            <td class="up">10.4%</td>
+            <td class="up">+1%</td>
+        </tr><tr>
+            <td>欺诈师</td>
+            <td>Invader</td>
+            <td class="up">31.3%</td>
+            <td class="up">+1.9%</td>
+            <td class="down">5.5%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>暗之巨人</td>
+            <td>Invader</td>
+            <td class="up">31%</td>
+            <td class="up">+4%</td>
+            <td class="up">4.1%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>蛇精</td>
+            <td>Invader</td>
+            <td class="up">30.9%</td>
+            <td class="up">+4.9%</td>
+            <td class="down">0.9%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>搬运工</td>
+            <td>Invader</td>
+            <td class="up">30.4%</td>
+            <td class="up">+5.5%</td>
+            <td class="up">2.1%</td>
+            <td class="up">+0.3%</td>
+        </tr><tr>
+            <td>间谍</td>
+            <td>Invader</td>
+            <td class="up">30%</td>
+            <td class="up">+5.9%</td>
+            <td class="down">5.1%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>忍者</td>
+            <td>Invader</td>
+            <td class="up">30%</td>
+            <td class="up">+4.6%</td>
+            <td class="">2.6%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>狙击手</td>
+            <td>Invader</td>
+            <td class="up">29.2%</td>
+            <td class="up">+3.7%</td>
+            <td class="up">7.7%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>捣蛋鬼</td>
+            <td>Invader</td>
+            <td class="up">29.2%</td>
+            <td class="up">+1.3%</td>
+            <td class="up">3.3%</td>
+            <td class="up">+0.7%</td>
+        </tr><tr>
+            <td>伪人</td>
+            <td>Invader</td>
+            <td class="up">29%</td>
+            <td class="up">+0.1%</td>
+            <td class="up">3.7%</td>
+            <td class="up">+0.7%</td>
+        </tr><tr>
+            <td>闪光弹</td>
+            <td>Invader</td>
+            <td class="down">28.3%</td>
+            <td class="down">-1.2%</td>
+            <td class="down">2%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>变色龙</td>
+            <td>Invader</td>
+            <td class="up">27.9%</td>
+            <td class="up">+2.5%</td>
+            <td class="up">7.1%</td>
+            <td class="up">+0.3%</td>
+        </tr><tr>
+            <td>女巫</td>
+            <td>Invader</td>
+            <td class="down">27.8%</td>
+            <td class="down">-0.6%</td>
+            <td class="down">7.5%</td>
+            <td class="down">-2%</td>
+        </tr><tr>
+            <td>清洁工</td>
+            <td>Invader</td>
+            <td class="up">27.4%</td>
+            <td class="up">+2.9%</td>
+            <td class="down">8.5%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>小黑</td>
+            <td>Invader</td>
+            <td class="down">27%</td>
+            <td class="down">-0.2%</td>
+            <td class="">1.2%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>孙悟空</td>
+            <td>Invader</td>
+            <td class="up">26.7%</td>
+            <td class="up">+6.5%</td>
+            <td class="up">2.9%</td>
+            <td class="up">+0.4%</td>
+        </tr><tr>
+            <td>收债人</td>
+            <td>Invader</td>
+            <td class="down">26.5%</td>
+            <td class="down">-0.2%</td>
+            <td class="down">5.5%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>咒术师</td>
+            <td>Invader</td>
+            <td class="up">26.3%</td>
+            <td class="up">+3.3%</td>
+            <td class="down">5.3%</td>
+            <td class="down">-0.3%</td>
+        </tr><tr>
+            <td>内鬼</td>
+            <td>Invader</td>
+            <td class="up">23.4%</td>
+            <td class="up">+1.9%</td>
+            <td class="down">1.8%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>守夜人</td>
+            <td>Invader</td>
+            <td class="down">22.7%</td>
+            <td class="down">-0.1%</td>
+            <td class="up">3.2%</td>
+            <td class="up">+0.4%</td>
+        </tr><tr>
+            <td>幸存者</td>
+            <td>Neutral</td>
+            <td class="down">70.3%</td>
+            <td class="down">-1.2%</td>
+            <td class="up">39.3%</td>
+            <td class="up">+0.5%</td>
+        </tr><tr>
+            <td>墙头草</td>
+            <td>Neutral</td>
+            <td class="down">53.3%</td>
+            <td class="down">-5.1%</td>
+            <td class="up">13.2%</td>
+            <td class="up">+0.1%</td>
+        </tr><tr>
+            <td>小蜜蜂</td>
+            <td>Neutral</td>
+            <td class="down">46.7%</td>
+            <td class="down">-3.8%</td>
+            <td class="down">26.7%</td>
+            <td class="down">-0.8%</td>
+        </tr><tr>
+            <td>丘比特</td>
+            <td>Neutral</td>
+            <td class="down">43.4%</td>
+            <td class="down">-2.3%</td>
+            <td class="down">17.1%</td>
+            <td class="down">-0.3%</td>
+        </tr><tr>
+            <td>怪盗</td>
+            <td>Neutral</td>
+            <td class="down">30.2%</td>
+            <td class="down">-3.3%</td>
+            <td class="down">21.2%</td>
+            <td class="down">-3%</td>
+        </tr><tr>
+            <td>神子</td>
+            <td>Neutral</td>
+            <td class="down">26.1%</td>
+            <td class="down">-2.7%</td>
+            <td class="down">4.7%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>恶魔</td>
+            <td>Neutral</td>
+            <td class="">24.3%</td>
+            <td class="">0%</td>
+            <td class="down">5.1%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>幻影</td>
+            <td>Neutral</td>
+            <td class="up">23.2%</td>
+            <td class="up">+14.1%</td>
+            <td class="up">15.3%</td>
+            <td class="up">+5.7%</td>
+        </tr><tr>
+            <td>饕餮</td>
+            <td>Neutral</td>
+            <td class="up">17.2%</td>
+            <td class="up">+5.6%</td>
+            <td class="up">4.1%</td>
+            <td class="up">+0.9%</td>
+        </tr><tr>
+            <td>无面人</td>
+            <td>Neutral</td>
+            <td class="down">17.2%</td>
+            <td class="down">-0.1%</td>
+            <td class="down">10.9%</td>
+            <td class="down">-0.7%</td>
+        </tr><tr>
+            <td>小丑</td>
+            <td>Neutral</td>
+            <td class="up">15.1%</td>
+            <td class="up">+0.2%</td>
+            <td class="up">9.1%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>大胃王</td>
+            <td>Neutral</td>
+            <td class="up">13.7%</td>
+            <td class="up">+0.8%</td>
+            <td class="up">13.9%</td>
+            <td class="up">+0.3%</td>
+        </tr><tr>
+            <td>焰火师</td>
+            <td>Neutral</td>
+            <td class="down">12.8%</td>
+            <td class="down">-3.4%</td>
+            <td class="down">8.2%</td>
+            <td class="down">-1.1%</td>
+        </tr><tr>
+            <td>怪兽</td>
+            <td>Neutral</td>
+            <td class="down">12.2%</td>
+            <td class="down">-2.5%</td>
+            <td class="down">7.4%</td>
+            <td class="down">-1%</td>
+        </tr><tr>
+            <td>奶龙</td>
+            <td>Neutral</td>
+            <td class="down">8.1%</td>
+            <td class="down">-5.3%</td>
+            <td class="down">3.8%</td>
+            <td class="down">-0.1%</td>
+        </tr></table></div><h2>Peak Tournament - 2026-04-23_pm</h2>
+    <div class="table-wrap">
+    <table>
+    <tr><th>角色</th><th>阵营</th><th>胜率</th><th>变化</th><th>登场率</th><th>变化</th></tr><tr>
+            <td>换票师</td>
+            <td>Astronaut</td>
+            <td class="up">49.6%</td>
+            <td class="up">+11.2%</td>
+            <td class="down">30.4%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>勇者</td>
+            <td>Astronaut</td>
+            <td class="up">47.2%</td>
+            <td class="up">+7.9%</td>
+            <td class="">23.4%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>考古学家</td>
+            <td>Astronaut</td>
+            <td class="up">47.2%</td>
+            <td class="up">+12.2%</td>
+            <td class="down">20.2%</td>
+            <td class="down">-4.1%</td>
+        </tr><tr>
+            <td>时间之主</td>
+            <td>Astronaut</td>
+            <td class="up">45.7%</td>
+            <td class="up">+4%</td>
+            <td class="down">21.7%</td>
+            <td class="down">-0.6%</td>
+        </tr><tr>
+            <td>卧底</td>
+            <td>Astronaut</td>
+            <td class="down">45.6%</td>
+            <td class="down">-1.8%</td>
+            <td class="down">14.5%</td>
+            <td class="down">-2.4%</td>
+        </tr><tr>
+            <td>工程师</td>
+            <td>Astronaut</td>
+            <td class="up">44.1%</td>
+            <td class="up">+6.7%</td>
+            <td class="down">22.4%</td>
+            <td class="down">-0.5%</td>
+        </tr><tr>
+            <td>守卫</td>
+            <td>Astronaut</td>
+            <td class="up">43.9%</td>
+            <td class="up">+6.8%</td>
+            <td class="down">19.9%</td>
+            <td class="down">-1.2%</td>
+        </tr><tr>
+            <td>保安</td>
+            <td>Astronaut</td>
+            <td class="up">43.9%</td>
+            <td class="up">+1%</td>
+            <td class="down">16.2%</td>
+            <td class="down">-0.9%</td>
+        </tr><tr>
+            <td>单面人</td>
+            <td>Astronaut</td>
+            <td class="up">43.3%</td>
+            <td class="up">+4.1%</td>
+            <td class="down">37.5%</td>
+            <td class="down">-7.9%</td>
+        </tr><tr>
+            <td>光之巨人</td>
+            <td>Astronaut</td>
+            <td class="up">43.1%</td>
+            <td class="up">+2.1%</td>
+            <td class="up">29.6%</td>
+            <td class="up">+2.9%</td>
+        </tr><tr>
+            <td>市长</td>
+            <td>Astronaut</td>
+            <td class="up">42.9%</td>
+            <td class="up">+5%</td>
+            <td class="down">22%</td>
+            <td class="down">-0.4%</td>
+        </tr><tr>
+            <td>老兵</td>
+            <td>Astronaut</td>
+            <td class="down">42.7%</td>
+            <td class="down">-5.6%</td>
+            <td class="up">23.3%</td>
+            <td class="up">+0.6%</td>
+        </tr><tr>
+            <td>猎人</td>
+            <td>Astronaut</td>
+            <td class="up">42.5%</td>
+            <td class="up">+0.4%</td>
+            <td class="up">26.7%</td>
+            <td class="up">+2.2%</td>
+        </tr><tr>
+            <td>守望者</td>
+            <td>Astronaut</td>
+            <td class="up">42.1%</td>
+            <td class="up">+0.5%</td>
+            <td class="up">30.8%</td>
+            <td class="up">+2.6%</td>
+        </tr><tr>
+            <td>警长</td>
+            <td>Astronaut</td>
+            <td class="up">41.7%</td>
+            <td class="up">+1.7%</td>
+            <td class="down">99.9%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>魔术师</td>
+            <td>Astronaut</td>
+            <td class="up">41.7%</td>
+            <td class="up">+1.1%</td>
+            <td class="down">16.8%</td>
+            <td class="down">-2.7%</td>
+        </tr><tr>
+            <td>诱饵</td>
+            <td>Astronaut</td>
+            <td class="up">41.4%</td>
+            <td class="up">+1.5%</td>
+            <td class="">99.8%</td>
+            <td class="">0%</td>
+        </tr><tr>
+            <td>武士</td>
+            <td>Astronaut</td>
+            <td class="down">40.3%</td>
+            <td class="down">-1.3%</td>
+            <td class="up">47.2%</td>
+            <td class="up">+1.2%</td>
+        </tr><tr>
+            <td>管道工</td>
+            <td>Astronaut</td>
+            <td class="up">40.1%</td>
+            <td class="up">+3.3%</td>
+            <td class="up">21.1%</td>
+            <td class="up">+3.3%</td>
+        </tr><tr>
+            <td>医生</td>
+            <td>Astronaut</td>
+            <td class="down">39.3%</td>
+            <td class="down">-3%</td>
+            <td class="up">27.2%</td>
+            <td class="up">+3.7%</td>
+        </tr><tr>
+            <td>侦探</td>
+            <td>Astronaut</td>
+            <td class="down">38.6%</td>
+            <td class="down">-3.3%</td>
+            <td class="up">23.6%</td>
+            <td class="up">+6.5%</td>
+        </tr><tr>
+            <td>预言家</td>
+            <td>Astronaut</td>
+            <td class="up">38.5%</td>
+            <td class="up">+2.4%</td>
+            <td class="down">22.6%</td>
+            <td class="down">-1.1%</td>
+        </tr><tr>
+            <td>情报员</td>
+            <td>Astronaut</td>
+            <td class="up">38.4%</td>
+            <td class="up">+0.9%</td>
+            <td class="down">20%</td>
+            <td class="down">-1.6%</td>
+        </tr><tr>
+            <td>狱卒</td>
+            <td>Astronaut</td>
+            <td class="down">38.2%</td>
+            <td class="down">-6.3%</td>
+            <td class="down">18%</td>
+            <td class="down">-2.4%</td>
+        </tr><tr>
+            <td>黑客</td>
+            <td>Astronaut</td>
+            <td class="down">35.5%</td>
+            <td class="down">-2.8%</td>
+            <td class="up">22.6%</td>
+            <td class="up">+0.6%</td>
+        </tr><tr>
+            <td>哪吒</td>
+            <td>Astronaut</td>
+            <td class="down">34.3%</td>
+            <td class="down">-3.4%</td>
+            <td class="up">20.8%</td>
+            <td class="up">+1.1%</td>
+        </tr><tr>
+            <td>国王</td>
+            <td>Astronaut</td>
+            <td class="down">33.6%</td>
+            <td class="down">-4.7%</td>
+            <td class="up">21.6%</td>
+            <td class="up">+1.6%</td>
+        </tr><tr>
+            <td>时间刺客</td>
+            <td>Invader</td>
+            <td class="up">54%</td>
+            <td class="up">+4%</td>
+            <td class="up">11.2%</td>
+            <td class="up">+1.6%</td>
+        </tr><tr>
+            <td>女帝</td>
+            <td>Invader</td>
+            <td class="down">48.9%</td>
+            <td class="down">-10.9%</td>
+            <td class="up">10.3%</td>
+            <td class="up">+2.1%</td>
+        </tr><tr>
+            <td>摄魂怪</td>
+            <td>Invader</td>
+            <td class="down">48.4%</td>
+            <td class="down">-8.3%</td>
+            <td class="down">32.9%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>清洁工</td>
+            <td>Invader</td>
+            <td class="down">47%</td>
+            <td class="down">-6.2%</td>
+            <td class="down">15.3%</td>
+            <td class="down">-1.9%</td>
+        </tr><tr>
+            <td>闪光弹</td>
+            <td>Invader</td>
+            <td class="down">45.8%</td>
+            <td class="down">-4.2%</td>
+            <td class="up">6.2%</td>
+            <td class="up">+1.7%</td>
+        </tr><tr>
+            <td>搬运工</td>
+            <td>Invader</td>
+            <td class="down">44.9%</td>
+            <td class="down">-8.2%</td>
+            <td class="up">7.3%</td>
+            <td class="up">+0.7%</td>
+        </tr><tr>
+            <td>伪人</td>
+            <td>Invader</td>
+            <td class="down">44.9%</td>
+            <td class="down">-8.5%</td>
+            <td class="up">6.8%</td>
+            <td class="up">+2.2%</td>
+        </tr><tr>
+            <td>欺诈师</td>
+            <td>Invader</td>
+            <td class="down">44.3%</td>
+            <td class="down">-6.7%</td>
+            <td class="up">9.1%</td>
+            <td class="up">+0.9%</td>
+        </tr><tr>
+            <td>赏金猎人</td>
+            <td>Invader</td>
+            <td class="down">44.2%</td>
+            <td class="down">-11.3%</td>
+            <td class="down">9.6%</td>
+            <td class="down">-0.3%</td>
+        </tr><tr>
+            <td>狙击手</td>
+            <td>Invader</td>
+            <td class="down">43.7%</td>
+            <td class="down">-13.4%</td>
+            <td class="down">6.7%</td>
+            <td class="down">-1%</td>
+        </tr><tr>
+            <td>双面人</td>
+            <td>Invader</td>
+            <td class="down">43%</td>
+            <td class="down">-8.8%</td>
+            <td class="up">95%</td>
+            <td class="up">+3.1%</td>
+        </tr><tr>
+            <td>忍者</td>
+            <td>Invader</td>
+            <td class="down">42.7%</td>
+            <td class="down">-8.6%</td>
+            <td class="up">9.9%</td>
+            <td class="up">+0.8%</td>
+        </tr><tr>
+            <td>变色龙</td>
+            <td>Invader</td>
+            <td class="down">42.5%</td>
+            <td class="down">-0.2%</td>
+            <td class="down">8.1%</td>
+            <td class="down">-0.1%</td>
+        </tr><tr>
+            <td>暗之巨人</td>
+            <td>Invader</td>
+            <td class="up">40.9%</td>
+            <td class="up">+0.5%</td>
+            <td class="up">7.1%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>间谍</td>
+            <td>Invader</td>
+            <td class="down">40.7%</td>
+            <td class="down">-7.5%</td>
+            <td class="down">6.5%</td>
+            <td class="down">-0.2%</td>
+        </tr><tr>
+            <td>捣蛋鬼</td>
+            <td>Invader</td>
+            <td class="down">40%</td>
+            <td class="down">-5.2%</td>
+            <td class="up">5.4%</td>
+            <td class="up">+0.6%</td>
+        </tr><tr>
+            <td>咒术师</td>
+            <td>Invader</td>
+            <td class="up">38.5%</td>
+            <td class="up">+0.7%</td>
+            <td class="up">8.7%</td>
+            <td class="up">+1.6%</td>
+        </tr><tr>
+            <td>女巫</td>
+            <td>Invader</td>
+            <td class="down">38.4%</td>
+            <td class="down">-16.5%</td>
+            <td class="down">10.4%</td>
+            <td class="down">-14.7%</td>
+        </tr><tr>
+            <td>孙悟空</td>
+            <td>Invader</td>
+            <td class="down">37.9%</td>
+            <td class="down">-11.3%</td>
+            <td class="up">5%</td>
+            <td class="up">+0.2%</td>
+        </tr><tr>
+            <td>守夜人</td>
+            <td>Invader</td>
+            <td class="down">36%</td>
+            <td class="down">-18.1%</td>
+            <td class="down">7.4%</td>
+            <td class="down">-0.5%</td>
+        </tr><tr>
+            <td>吸血鬼</td>
+            <td>Invader</td>
+            <td class="down">36%</td>
+            <td class="down">-14%</td>
+            <td class="up">8.7%</td>
+            <td class="up">+0.7%</td>
+        </tr><tr>
+            <td>小黑</td>
+            <td>Invader</td>
+            <td class="down">34.8%</td>
+            <td class="down">-12.5%</td>
+            <td class="up">5.3%</td>
+            <td class="up">+0.9%</td>
+        </tr><tr>
+            <td>收债人</td>
+            <td>Invader</td>
+            <td class="down">30.2%</td>
+            <td class="down">-12.9%</td>
+            <td class="up">7.1%</td>
+            <td class="up">+1.3%</td>
+        </tr><tr>
+            <td>恶魔</td>
+            <td>Neutral</td>
+            <td class="up">20.5%</td>
+            <td class="up">+4.6%</td>
+            <td class="down">10%</td>
+            <td class="down">-4.4%</td>
+        </tr><tr>
+            <td>幻影</td>
+            <td>Neutral</td>
+            <td class="up">20.5%</td>
+            <td class="up">+15.1%</td>
+            <td class="up">35.7%</td>
+            <td class="up">+19.9%</td>
+        </tr><tr>
+            <td>小丑</td>
+            <td>Neutral</td>
+            <td class="up">17.1%</td>
+            <td class="up">+4.4%</td>
+            <td class="down">13.2%</td>
+            <td class="down">-4.2%</td>
+        </tr><tr>
+            <td>大胃王</td>
+            <td>Neutral</td>
+            <td class="up">12.2%</td>
+            <td class="up">+5.9%</td>
+            <td class="down">11.1%</td>
+            <td class="down">-1.4%</td>
+        </tr><tr>
+            <td>焰火师</td>
+            <td>Neutral</td>
+            <td class="up">9.4%</td>
+            <td class="up">+4.8%</td>
+            <td class="down">9.7%</td>
+            <td class="down">-4.1%</td>
+        </tr><tr>
+            <td>怪兽</td>
+            <td>Neutral</td>
+            <td class="up">8.9%</td>
+            <td class="up">+3.5%</td>
+            <td class="down">9.2%</td>
+            <td class="down">-2.6%</td>
+        </tr><tr>
+            <td>饕餮</td>
+            <td>Neutral</td>
+            <td class="down">4.7%</td>
+            <td class="down">-0.9%</td>
+            <td class="down">11.1%</td>
+            <td class="down">-3.2%</td>
+        </tr></table></div></body></html>
