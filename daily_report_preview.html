@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>身份胜率日报 - 预览版</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f5f5f5; color: #333; }
+.preview-banner { background: #e94560; color: #fff; text-align: center; padding: 6px 0; font-size: 12px; letter-spacing: 2px; }
+.container { max-width: 520px; margin: 0 auto; padding: 0; background: #fff; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.08); }
+
+/* Header */
+.header { padding: 20px 16px 12px; border-bottom: 1px solid #eee; }
+.header h1 { font-size: 18px; font-weight: 700; color: #1a1a2e; letter-spacing: 1px; }
+.header .sub { font-size: 12px; color: #999; margin-top: 4px; }
+
+/* Mode Tabs */
+.mode-tabs { display: flex; border-bottom: 1px solid #eee; background: #fafafa; }
+.mode-tab { flex: 1; padding: 12px 8px; text-align: center; font-size: 13px; color: #999; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; user-select: none; }
+.mode-tab:hover { color: #666; background: #f0f0f0; }
+.mode-tab.active { color: #e94560; border-bottom-color: #e94560; font-weight: 600; background: #fff; }
+
+/* Date Bar */
+.date-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid #eee; background: #fafafa; }
+.date-bar label { font-size: 12px; color: #999; }
+.date-bar select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: #fff; color: #333; outline: none; cursor: pointer; }
+.date-bar select:focus { border-color: #e94560; }
+
+/* Report Table */
+.report { padding: 0; }
+.faction-group { margin: 0; }
+.faction-header { padding: 10px 16px; font-size: 13px; font-weight: 700; letter-spacing: 1px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 6px; }
+.faction-header.astronaut { color: #2563eb; background: #eff6ff; }
+.faction-header.invader { color: #dc2626; background: #fef2f2; }
+.faction-header.neutral { color: #ca8a04; background: #fefce8; }
+
+/* Column headers */
+.col-headers { display: grid; grid-template-columns: 1fr 70px 70px 70px 70px; padding: 8px 16px; background: #f8f8f8; border-bottom: 1px solid #eee; font-size: 11px; color: #999; text-align: center; }
+.col-headers .col-name { text-align: left; }
+.col-headers .col-change { font-size: 10px; color: #bbb; }
+
+/* Data rows */
+.data-row { display: grid; grid-template-columns: 1fr 70px 70px 70px 70px; padding: 10px 16px; border-bottom: 1px solid #f0f0f0; font-size: 13px; text-align: center; align-items: center; transition: background 0.1s; }
+.data-row:hover { background: #fafafa; }
+.data-row .role-name { text-align: left; font-weight: 500; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.data-row .role-name .change-tag { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+.change-tag.up { background: #dcfce7; color: #16a34a; }
+.change-tag.down { background: #fce4ec; color: #d32f2f; }
+.change-tag.new { background: #e0e7ff; color: #4f46e5; }
+
+.data-row .val-win { color: #16a34a; font-weight: 600; }
+.data-row .val-pick { color: #666; }
+.data-row .val-diff { font-weight: 500; }
+.data-row .val-diff.up { color: #16a34a; }
+.data-row .val-diff.down { color: #dc2626; }
+.data-row .val-diff.zero { color: #999; }
+
+/* Footer */
+.footer { padding: 20px 16px; text-align: center; border-top: 1px solid #eee; }
+.footer p { font-size: 11px; color: #ccc; }
+.footer .date-label { font-size: 12px; color: #999; margin-bottom: 4px; }
+
+/* Mobile optimization */
+@media (max-width: 520px) {
+  .col-headers, .data-row { grid-template-columns: 1fr 16vw 16vw 16vw 16vw; }
+  .col-headers { padding: 8px 12px; font-size: 10px; }
+  .data-row { padding: 8px 12px; font-size: 12px; }
+}
+
+@media (max-width: 360px) {
+  .col-headers, .data-row { grid-template-columns: 1fr 55px 55px 55px 55px; }
+  .data-row { padding: 7px 8px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="preview-banner">⚡ 预览版 · 布局功能测试</div>
+
+<div class="container">
+  <div class="header">
+    <h1>📊 身份胜率日报</h1>
+    <div class="sub">窄框报表 · 数据源自 game-data-analysis</div>
+  </div>
+
+  <div class="mode-tabs" id="modeTabs">
+    <div class="mode-tab" data-mode="诸神排位">⚔️ 诸神排位</div>
+    <div class="mode-tab active" data-mode="特别行动单人排位">💥 特别行动</div>
+    <div class="mode-tab" data-mode="巅峰赛">🏆 巅峰赛</div>
+  </div>
+
+  <div class="date-bar">
+    <label>📅 日期</label>
+    <select id="dateSelect"></select>
+  </div>
+
+  <div class="report" id="reportArea">
+    <div style="padding: 40px 16px; text-align: center; color: #ccc;">加载数据中...</div>
+  </div>
+
+  <div class="footer">
+    <div class="date-label" id="footerDate"></div>
+    <p>Generated by Xcon · game-data-analysis</p>
+  </div>
+</div>
+
+<script>
+// Inline data
+const DATA = {};
+const MODE_KEYS = ['诸神排位', '特别行动单人排位', '巅峰赛'];
+const FACTION_NAMES = {
+  astronaut: { label: '🚀 宇航员', cls: 'astronaut' },
+  invader: { label: '👾 入侵者', cls: 'invader' },
+  neutral: { label: '⚖️ 中立', cls: 'neutral' }
+};
+
+let currentMode = '特别行动单人排位';
+let currentDate = null;
+
+function fmtPct(v) {
+  if (v === undefined || v === null || isNaN(v)) return '-';
+  return Number(v).toFixed(1) + '%';
+}
+
+function fmtDiff(v) {
+  if (v === undefined || v === null || isNaN(v)) return '-';
+  const n = Number(v);
+  if (n > 0) return '+' + n.toFixed(1);
+  if (n < 0) return n.toFixed(1);
+  return '0.0';
+}
+
+function diffClass(v) {
+  if (v === undefined || v === null || isNaN(v)) return 'zero';
+  const n = Number(v);
+  if (n > 0) return 'up';
+  if (n < 0) return 'down';
+  return 'zero';
+}
+
+function getChangeTag(roleData) {
+  // roleData is [name, winRate, pickRate, winRateChange, pickRateChange]
+  const name = roleData[0];
+  // If winRateChange is very large (new role added), show "新"
+  // If pickRateChange is very large in positive, show "↑热门"
+  // If winRateChange > 5, show "↑" 
+  const wrChange = roleData[3];
+  const prChange = roleData[4];
+  if (wrChange === undefined || wrChange === null) return '';
+  const wc = Number(wrChange);
+  
+  // Check if role was previously not in data (massive change means new)
+  // We detect this by checking if the previous date had this role
+  // For now, just show simple indicators
+  if (wc > 10) return '<span class="change-tag up">↑新星</span>';
+  if (wc < -10) return '<span class="change-tag down">↓冷门</span>';
+  if (wc > 5) return '<span class="change-tag up">↑</span>';
+  if (wc < -5) return '<span class="change-tag down">↓</span>';
+  return '';
+}
+
+function renderReport() {
+  const area = document.getElementById('reportArea');
+  const modeData = DATA[currentMode];
+  if (!modeData || !modeData[currentDate]) {
+    area.innerHTML = '<div style="padding: 40px 16px; text-align: center; color: #ccc;">暂无该日数据</div>';
+    document.getElementById('footerDate').textContent = '';
+    return;
+  }
+
+  const dayData = modeData[currentDate];
+  const factions = ['astronaut', 'invader', 'neutral'];
+  let html = '';
+
+  // Column headers
+  html += '<div class="col-headers">';
+  html += '<div class="col-name">身份</div>';
+  html += '<div>胜率</div>';
+  html += '<div>登场率</div>';
+  html += '<div class="col-change">胜率同比</div>';
+  html += '<div class="col-change">登场率同比</div>';
+  html += '</div>';
+
+  for (const faction of factions) {
+    const roles = dayData[faction];
+    if (!roles || roles.length === 0) continue;
+    const finfo = FACTION_NAMES[faction];
+
+    // Faction header
+    html += '<div class="faction-group">';
+    html += '<div class="faction-header ' + finfo.cls + '">' + finfo.label + ' <span style="font-weight:400;font-size:11px;color:inherit;opacity:0.6;">(' + roles.length + ')</span></div>';
+
+    // Sort roles by win rate descending
+    const sorted = [...roles].sort((a, b) => Number(b[1]) - Number(a[1]));
+
+    for (const r of sorted) {
+      const name = r[0];
+      const wr = r[1];
+      const pr = r[2];
+      const wrDiff = r[3];
+      const prDiff = r[4];
+      const tag = getChangeTag(r);
+
+      html += '<div class="data-row">';
+      html += '<div class="role-name">' + name + tag + '</div>';
+      html += '<div class="val-win">' + fmtPct(wr) + '</div>';
+      html += '<div class="val-pick">' + fmtPct(pr) + '</div>';
+      html += '<div class="val-diff ' + diffClass(wrDiff) + '">' + fmtDiff(wrDiff) + '</div>';
+      html += '<div class="val-diff ' + diffClass(prDiff) + '">' + fmtDiff(prDiff) + '</div>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  area.innerHTML = html;
+
+  // Update footer
+  document.getElementById('footerDate').textContent = '数据日期：' + currentDate;
+}
+
+function updateDates() {
+  const sel = document.getElementById('dateSelect');
+  sel.innerHTML = '';
+  const modeData = DATA[currentMode];
+  if (!modeData) return;
+
+  const dates = Object.keys(modeData).sort().reverse();
+  if (dates.length === 0) return;
+
+  for (const d of dates) {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    sel.appendChild(opt);
+  }
+
+  // Default to latest
+  currentDate = dates[0];
+  sel.value = currentDate;
+}
+
+function init() {
+  // Fetch data.json
+  fetch('./data.json')
+    .then(r => r.json())
+    .then(data => {
+      Object.assign(DATA, data);
+      updateDates();
+      renderReport();
+    })
+    .catch(err => {
+      // Fallback: try from GitHub
+      fetch('https://jiangzhiwen0520.github.io/identity-winrate-analysis/data.json')
+        .then(r => r.json())
+        .then(data => {
+          Object.assign(DATA, data);
+          updateDates();
+          renderReport();
+        })
+        .catch(e2 => {
+          document.getElementById('reportArea').innerHTML = 
+            '<div style="padding: 40px 16px; text-align: center; color: #e94560;">加载失败，请检查 data.json 路径</div>';
+        });
+    });
+}
+
+// Event listeners
+document.getElementById('modeTabs').addEventListener('click', function(e) {
+  const tab = e.target.closest('.mode-tab');
+  if (!tab) return;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  currentMode = tab.dataset.mode;
+  updateDates();
+  renderReport();
+});
+
+document.getElementById('dateSelect').addEventListener('change', function(e) {
+  currentDate = e.target.value;
+  renderReport();
+});
+
+init();
+</script>
+
+</body>
+</html>
