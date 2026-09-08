@@ -31,6 +31,7 @@ body { background: #0f1420; color: #e5e7eb; font-family: -apple-system, BlinkMac
 .page-title { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 14px; }
 .page-title .sub { font-size: 12px; color: #6b7280; font-weight: 400; margin-left: 10px; }
 .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; background: #151b2e; border-radius: 12px; padding: 12px 14px; }
+.ctrl-row { display: contents; }
 .controls label { font-size: 12px; color: #9ca3af; white-space: nowrap; }
 .controls select, .controls input[type=number], .controls input[type=text], .controls input[type=date] { background: #1e293b; border: 1px solid #2d3748; border-radius: 6px; padding: 5px 8px; color: #e5e7eb; font-size: 13px; }
 .controls select:focus, .controls input:focus { outline: none; border-color: #3b82f6; }
@@ -140,6 +141,11 @@ tr.role-tbl-row { cursor: pointer; }
   .controls #metric-btns { display: contents; }
   .chart-box { height: 340px; }
   .fs-btn { padding: 6px 12px; font-size: 13px; }
+  /* 基础监控控件：两行网格（指标行 3 列 + 操作行 4 列） */
+  .ctrl-row { display: grid; gap: 8px; align-items: center; }
+  #ctrl-metric { grid-template-columns: repeat(3, 1fr); }
+  #ctrl-ops { grid-template-columns: repeat(4, 1fr); }
+  #ctrl-metric .btn, #ctrl-ops .btn, #ctrl-ops select { width: 100%; max-width: none; min-height: 38px; padding: 8px 4px; }
 }
 </style>
 </head>
@@ -164,14 +170,18 @@ tr.role-tbl-row { cursor: pointer; }
     <div class="panel active" id="panel-base">
       <div class="page-title">基础监控</div>
       <div class="controls">
-        <label>指标</label>
-        <span id="metric-btns"></span>
-        <label>阵营</label>
-        <select id="camp-sel"><option value="all">全部</option></select>
-        <button class="btn" id="btn-all">全选</button>
-        <button class="btn" id="btn-none">清空</button>
-        <label style="margin-left:6px;">趋势线</label>
-        <button class="btn active" id="btn-ma">MA7</button>
+        <div class="ctrl-row" id="ctrl-metric">
+          <label>指标</label>
+          <span id="metric-btns"></span>
+        </div>
+        <div class="ctrl-row" id="ctrl-ops">
+          <label>阵营</label>
+          <select id="camp-sel"><option value="all">全部</option></select>
+          <button class="btn" id="btn-all">全选</button>
+          <button class="btn" id="btn-none">清空</button>
+          <label style="margin-left:6px;">趋势线</label>
+          <button class="btn active" id="btn-ma">MA7</button>
+        </div>
       </div>
       <div class="controls">
         <label>身份（点击选择，可多选）</label>
