@@ -39,6 +39,12 @@ body { background: #0f1420; color: #e5e7eb; font-family: -apple-system, BlinkMac
 .btn.active { background: #3b82f6; color: #fff; }
 .chart-card { background: #151b2e; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
 .chart-title { color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.chart-title .spacer { flex: 1; }
+.fs-btn { background: #1e293b; border: 1px solid #2d3748; border-radius: 6px; padding: 4px 10px; color: #94a3b8; font-size: 12px; cursor: pointer; transition: all .12s; }
+.fs-btn:hover { background: #2d4a6f; color: #fff; }
+.chart-title .spacer { flex: 1; }
+.fs-btn { background: #1e293b; border: 1px solid #2d3748; border-radius: 6px; padding: 4px 10px; color: #94a3b8; font-size: 12px; cursor: pointer; transition: all .12s; }
+.fs-btn:hover { background: #2d4a6f; color: #fff; }
 .chart-title .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .chart-title .formula-note { font-size: 11px; color: #6b7280; font-weight: 400; margin-left: 6px; }
 .chart-box { position: relative; width: 100%; height: 460px; }
@@ -107,13 +113,28 @@ tr.role-tbl-row { cursor: pointer; }
 }
 /* 更小屏（≤420px）：控件更紧凑 */
 @media (max-width: 420px) {
-  .controls label { display: block; width: 100%; padding-top: 0; margin-top: 4px; }
-  .controls label:first-child { margin-top: 0; }
   .controls .btn, .controls select, .controls input { flex: 1 1 auto; }
   .nav-btn { flex: 1 1 100%; }
   .mode-btn { flex: 1 1 48%; }
-  .chart-box { height: 260px; }
+  .chart-box { height: 280px; }
   .metric-card { flex: 1 1 100%; }
+}
+/* ===== 图表全屏（放大/旋转） ===== */
+#fs-overlay { position: fixed; inset: 0; background: #0b0f1a; z-index: 9999; display: none; flex-direction: column; }
+#fs-overlay.show { display: flex; }
+#fs-bar { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid #1a2332; }
+#fs-bar .fs-t { font-size: 13px; color: #9ca3af; flex: 1; }
+#fs-stage-wrap { flex: 1; position: relative; overflow: hidden; }
+#fs-stage { position: absolute; left: 50%; top: 50%; width: calc(100vw - 24px); height: calc(100vh - 74px); transform: translate(-50%, -50%); transition: transform .25s ease, width .25s ease, height .25s ease; }
+#fs-stage.rot { width: calc(100vh - 74px); height: calc(100vw - 24px); transform: translate(-50%, -50%) rotate(90deg); }
+#fs-chart { width: 100%; height: 100%; }
+@media (max-width: 820px) {
+  .controls label { display: none; }
+  .controls { justify-content: flex-start; }
+  .controls .btn, .controls select { flex: 1 1 44%; max-width: none; }
+  .controls #metric-btns { display: contents; }
+  .chart-box { height: 340px; }
+  .fs-btn { padding: 6px 12px; font-size: 13px; }
 }
 </style>
 </head>
@@ -152,7 +173,7 @@ tr.role-tbl-row { cursor: pointer; }
         <div class="role-list" id="role-chips"></div>
       </div>
       <div class="chart-card">
-        <div class="chart-title"><span class="dot" style="background:#60a5fa;"></span><span id="line-title">胜率趋势</span><span class="formula-note" id="formula-note" style="display:none;">强度 = 胜率% × √选取率% ÷ 10（选取率&lt;2% 记为样本不足）</span></div>
+        <div class="chart-title"><span class="dot" style="background:#60a5fa;"></span><span id="line-title">胜率趋势</span><span class="formula-note" id="formula-note" style="display:none;">强度 = 胜率% × √选取率% ÷ 10（选取率&lt;2% 记为样本不足）</span><span class="spacer"></span><button class="fs-btn" id="fs-line-btn">全屏</button></div>
         <div class="chart-box" id="line-chart"></div>
       </div>
       <div class="chart-card" id="detail-card" style="display:none;">
@@ -210,7 +231,7 @@ tr.role-tbl-row { cursor: pointer; }
         <label>%</label>
       </div>
       <div class="chart-card">
-        <div class="chart-title"><span class="dot" style="background:#94d8c3;"></span>四象限：选取率 × 胜率（右上 = 强力身份，阈值可调）</div>
+        <div class="chart-title"><span class="dot" style="background:#94d8c3;"></span>四象限：选取率 × 胜率（右上 = 强力身份，阈值可调）<span class="spacer"></span><button class="fs-btn" id="fs-quad-btn">全屏</button></div>
         <div id="quad-chart"></div>
         <div class="quad-below">
           <div class="quad-col">
@@ -234,6 +255,15 @@ tr.role-tbl-row { cursor: pointer; }
     </div>
 
   </main>
+</div>
+
+<div id="fs-overlay">
+  <div id="fs-bar">
+    <span class="fs-t" id="fs-title">全屏图表</span>
+    <button class="fs-btn" id="fs-rot-btn">旋转 90°</button>
+    <button class="fs-btn" id="fs-close-btn">关闭</button>
+  </div>
+  <div id="fs-stage-wrap"><div id="fs-stage"><div id="fs-chart"></div></div></div>
 </div>
 
 <script src="roles.js"></script>
@@ -411,7 +441,7 @@ function setMetricBtn() {
 
 function initMetricBtns() {
   var h = '';
-  [['win','胜率'],['pick','选取率'],['dual','双指标'],['str','强度']].forEach(function(p){
+  [['win','胜率'],['pick','选取率'],['str','强度']].forEach(function(p){
     h += '<button class="btn' + (BASE.metric === p[0] ? ' active' : '') + '" data-metric="' + p[0] + '">' + p[1] + '</button>';
   });
   document.getElementById('metric-btns').innerHTML = h;
@@ -470,7 +500,6 @@ function renderLine() {
   var mode = BASE.mode, s = D.series[mode];
   var roleSet = BASE.roles.filter(function(r){ return s[r]; });
   var dates = D.dates;
-  var dual = BASE.metric === 'dual';
   var series = [];
   roleSet.forEach(function(r, idx){
     var recs = s[r].data;
@@ -479,31 +508,7 @@ function renderLine() {
     var wVals = dates.map(function(d){ var x = byDate[d]; return x && x.w != null ? x.w : null; });
     var pVals = dates.map(function(d){ var x = byDate[d]; return x && x.p != null ? x.p : null; });
     var color = COLORS[idx % COLORS.length];
-    if (dual) {
-      // 双指标：胜率实线（左轴）+ 选取率虚线（右轴）
-      series.push({
-        name: r + '·胜率', type: 'line', data: wVals, showSymbol: false, yAxisIndex: 0,
-        lineStyle: { width: 2, color: color }, itemStyle: { color: color },
-        emphasis: { focus: 'series', lineStyle: { width: 3 } }
-      });
-      series.push({
-        name: r + '·选取', type: 'line', data: pVals, showSymbol: false, yAxisIndex: 1,
-        lineStyle: { width: 2, color: color, type: 'dotted', opacity: 0.95 }, itemStyle: { color: color },
-        emphasis: { focus: 'series', lineStyle: { width: 3 } }
-      });
-      if (BASE.ma) {
-        series.push({
-          name: r + '·胜率MA7', type: 'line', data: ma7(wVals), showSymbol: false, yAxisIndex: 0,
-          lineStyle: { width: 1.2, color: color, type: 'dashed', opacity: 0.55 }, itemStyle: { color: color },
-          silent: true, emphasis: { focus: 'series' }
-        });
-        series.push({
-          name: r + '·选取MA7', type: 'line', data: ma7(pVals), showSymbol: false, yAxisIndex: 1,
-          lineStyle: { width: 1.2, color: color, type: 'dashed', opacity: 0.45 }, itemStyle: { color: color },
-          silent: true, emphasis: { focus: 'series' }
-        });
-      }
-    } else if (BASE.metric === 'str') {
+    if (BASE.metric === 'str') {
       // 强度 = 胜率% × √选取率% ÷ 10；平均选取率 < 2% 记为样本不足（灰显）
       var strVals = dates.map(function(d){ var x = byDate[d]; return x && x.w != null && x.p != null ? x.w * Math.sqrt(x.p) / 10 : null; });
       var pList = pVals.filter(function(v){ return v != null; });
@@ -539,15 +544,7 @@ function renderLine() {
       }
     }
   });
-  var yAxis;
-  if (BASE.metric === 'dual') {
-    yAxis = [
-      { type: 'value', name: '胜率 %', axisLabel: { color: '#9ca3af', fontSize: 11 }, splitLine: { lineStyle: { color: '#1e293b' } }, nameTextStyle: { color: '#6b7280' } },
-      { type: 'value', name: '选取率 %', axisLabel: { color: '#9ca3af', fontSize: 11 }, splitLine: { show: false }, nameTextStyle: { color: '#6b7280' } }
-    ];
-  } else {
-    yAxis = [{ type: 'value', name: BASE.metric === 'win' ? '胜率 %' : (BASE.metric === 'pick' ? '选取率 %' : '强度分'), axisLabel: { color: '#9ca3af', fontSize: 11 }, splitLine: { lineStyle: { color: '#1e293b' } }, nameTextStyle: { color: '#6b7280' } }];
-  }
+  var yAxis = [{ type: 'value', name: BASE.metric === 'win' ? '胜率 %' : (BASE.metric === 'pick' ? '选取率 %' : '强度分'), axisLabel: { color: '#9ca3af', fontSize: 11 }, splitLine: { lineStyle: { color: '#1e293b' } }, nameTextStyle: { color: '#6b7280' } }];
   // 默认近 7 天
   var zStart = dates.length > 7 ? Math.round((dates.length - 7) * 100 / dates.length) : 0;
   // 悬停聚焦：记录当前 hover 的系列，tooltip 只显示该线（及它的 MA7）
@@ -592,7 +589,7 @@ function renderLine() {
       }
     },
     legend: { type: 'scroll', textStyle: { color: '#9ca3af', fontSize: 11 }, pageIconColor: '#60a5fa', pageTextStyle: { color: '#9ca3af' }, top: 0 },
-    grid: { left: 50, right: BASE.metric === 'dual' ? 55 : 16, top: 34, bottom: 56, containLabel: true },
+    grid: { left: 50, right: 16, top: 34, bottom: 56, containLabel: true },
     xAxis: { type: 'category', data: dates.map(function(d){ return d.slice(5); }), axisLabel: { color: '#9ca3af', fontSize: 10.5 }, axisLine: { lineStyle: { color: '#2d3748' } } },
     yAxis: yAxis,
     dataZoom: [
@@ -601,7 +598,7 @@ function renderLine() {
     ],
     series: series
   }, true);
-  document.getElementById('line-title').textContent = modeName(mode) + ' · ' + (BASE.metric === 'win' ? '胜率' : BASE.metric === 'pick' ? '选取率' : BASE.metric === 'dual' ? '胜率+选取率' : '强度') + ' 趋势' + (BASE.ma ? '（含MA7虚线）' : '');
+  document.getElementById('line-title').textContent = modeName(mode) + ' · ' + (BASE.metric === 'win' ? '胜率' : BASE.metric === 'pick' ? '选取率' : '强度') + ' 趋势' + (BASE.ma ? '（含MA7虚线）' : '');
   var fn = document.getElementById('formula-note');
   if (fn) fn.style.display = BASE.metric === 'str' ? 'inline' : 'none';
   if (roleSet.length === 0) { document.getElementById('detail-card').style.display = 'none'; return; }
@@ -863,6 +860,40 @@ try { renderChips(); } catch (e) { console.error('renderChips 失败', e); }
 try { renderLine(); } catch (e) { console.error('renderLine 失败', e); }
 try { renderRisk(); } catch (e) { console.error('renderRisk 失败', e); }
 try { renderAI(); } catch (e) { console.error('renderAI 失败', e); }
+
+
+// ===== 图表全屏（放大/旋转） =====
+var fsChart = null, fsRot = false;
+function openFs(srcChart, title) {
+  var ov = document.getElementById('fs-overlay');
+  document.getElementById('fs-title').textContent = title;
+  var box = document.getElementById('fs-chart');
+  if (fsChart) { fsChart.dispose(); }
+  fsChart = echarts.init(box);
+  fsChart.setOption(srcChart.getOption(), true);
+  fsRot = false;
+  document.getElementById('fs-stage').classList.remove('rot');
+  document.getElementById('fs-rot-btn').textContent = '旋转 90°';
+  ov.classList.add('show');
+  setTimeout(function(){ fsChart.resize(); }, 80);
+}
+function closeFs() {
+  document.getElementById('fs-overlay').classList.remove('show');
+  document.getElementById('fs-stage').classList.remove('rot');
+  document.getElementById('fs-rot-btn').textContent = '旋转 90°';
+  if (fsChart) { fsChart.dispose(); fsChart = null; }
+}
+function toggleFsRot() {
+  fsRot = !fsRot;
+  document.getElementById('fs-stage').classList.toggle('rot', fsRot);
+  document.getElementById('fs-rot-btn').textContent = fsRot ? '复原' : '旋转 90°';
+  setTimeout(function(){ if (fsChart) fsChart.resize(); }, 300);
+}
+document.getElementById('fs-line-btn').onclick = function(){ if (lineChart) openFs(lineChart, '基础监控 · 折线图'); };
+document.getElementById('fs-quad-btn').onclick = function(){ if (quadChart) openFs(quadChart, 'AI 分析 · 四象限'); };
+document.getElementById('fs-rot-btn').onclick = toggleFsRot;
+document.getElementById('fs-close-btn').onclick = closeFs;
+document.getElementById('fs-overlay').addEventListener('click', function(e){ if (e.target.id === 'fs-overlay') closeFs(); });
 
 window.addEventListener('resize', function(){ if (lineChart) lineChart.resize(); if (quadChart) quadChart.resize(); });
 })();
