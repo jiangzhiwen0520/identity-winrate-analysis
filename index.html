@@ -208,6 +208,75 @@ tr.role-tbl-row { cursor: pointer; }
 
 <script src="roles.js"></script>
 <script src="data_index.js"></script>
+<!-- DATA_CHUNKS -->
+    <script src="data_2025-12d.js"></script>
+    <script src="data_2026-01a.js"></script>
+    <script src="data_2026-01b.js"></script>
+    <script src="data_2026-01c.js"></script>
+    <script src="data_2026-01d.js"></script>
+    <script src="data_2026-02a.js"></script>
+    <script src="data_2026-02b.js"></script>
+    <script src="data_2026-02c.js"></script>
+    <script src="data_2026-02d.js"></script>
+    <script src="data_2026-03a.js"></script>
+    <script src="data_2026-03b.js"></script>
+    <script src="data_2026-03c.js"></script>
+    <script src="data_2026-03d.js"></script>
+    <script src="data_2026-04a.js"></script>
+    <script src="data_2026-04b.js"></script>
+    <script src="data_2026-04c.js"></script>
+    <script src="data_2026-04d.js"></script>
+    <script src="data_2026-05a.js"></script>
+    <script src="data_2026-05b.js"></script>
+    <script src="data_2026-05c.js"></script>
+    <script src="data_2026-05d.js"></script>
+    <script src="data_2026-06a.js"></script>
+    <script src="data_2026-06b.js"></script>
+    <script src="data_2026-06c.js"></script>
+    <script src="data_2026-06d.js"></script>
+    <script src="data_2026-07a.js"></script>
+    <script src="data_2026-07b.js"></script>
+    <script src="data_2026-07c.js"></script>
+    <script src="data_2026-07d.js"></script>
+    <script src="data_2026-08a.js"></script>
+    <script src="data_2026-08b.js"></script>
+    <script src="data_2026-08c.js"></script>
+    <script src="data_2026-08d.js"></script>
+    <script src="data_2026-09a.js"></script>
+    <script src="risk_2026-01a.js"></script>
+    <script src="risk_2026-01b.js"></script>
+    <script src="risk_2026-01c.js"></script>
+    <script src="risk_2026-01d.js"></script>
+    <script src="risk_2026-02a.js"></script>
+    <script src="risk_2026-02b.js"></script>
+    <script src="risk_2026-02c.js"></script>
+    <script src="risk_2026-02d.js"></script>
+    <script src="risk_2026-03a.js"></script>
+    <script src="risk_2026-03b.js"></script>
+    <script src="risk_2026-03c.js"></script>
+    <script src="risk_2026-03d.js"></script>
+    <script src="risk_2026-04a.js"></script>
+    <script src="risk_2026-04b.js"></script>
+    <script src="risk_2026-04c.js"></script>
+    <script src="risk_2026-04d.js"></script>
+    <script src="risk_2026-05a.js"></script>
+    <script src="risk_2026-05b.js"></script>
+    <script src="risk_2026-05c.js"></script>
+    <script src="risk_2026-05d.js"></script>
+    <script src="risk_2026-06a.js"></script>
+    <script src="risk_2026-06b.js"></script>
+    <script src="risk_2026-06c.js"></script>
+    <script src="risk_2026-06d.js"></script>
+    <script src="risk_2026-07a.js"></script>
+    <script src="risk_2026-07b.js"></script>
+    <script src="risk_2026-07c.js"></script>
+    <script src="risk_2026-07d.js"></script>
+    <script src="risk_2026-08a.js"></script>
+    <script src="risk_2026-08b.js"></script>
+    <script src="risk_2026-08c.js"></script>
+    <script src="risk_2026-08d.js"></script>
+    <script src="risk_2026-09a.js"></script>
+    <!-- /DATA_CHUNKS -->
 <script>
 (function() {
 "use strict";
@@ -215,8 +284,6 @@ var ROLES = window.ROLES;
 // ===== 动态加载分块数据并合并 =====
 var D, R;
 if (window.OCR_META && window.DATA_FILES && window.RISK_FILES) {
-  for (var _i = 0; _i < window.DATA_FILES.length; _i++) document.write('<script src="' + window.DATA_FILES[_i] + '"><\/script>');
-  for (var _j = 0; _j < window.RISK_FILES.length; _j++) document.write('<script src="' + window.RISK_FILES[_j] + '"><\/script>');
   var _dates = [], _series = {};
   Object.keys(window.DP).sort().forEach(function(key){
     var p = window.DP[key];
