@@ -232,6 +232,7 @@ if (window.OCR_META && window.DATA_FILES && window.RISK_FILES) {
         var roleName = ridItem[0], camp = ridItem[1];
         var ent = _series[modeName][roleName] || (_series[modeName][roleName] = { camp: camp, data: [] });
         var mask = info[0];
+        var maskStr = (mask === '1' || mask === '0') ? null : mask;
         for (var k = 0; k < p.d.length; k++) {
           if (info[1][k] != null || info[2][k] != null) {
             var rec = { d: p.d[k] };
@@ -239,7 +240,8 @@ if (window.OCR_META && window.DATA_FILES && window.RISK_FILES) {
             if (info[2][k] != null) rec.p = info[2][k];
             if (info[3][k] != null) rec.wy = info[3][k];
             if (info[4][k] != null) rec.py = info[4][k];
-            if (mask && mask.charAt(k) === '1') rec.c = camp;
+            var hasC = (mask === '1') || (maskStr && maskStr.charAt(k) === '1');
+            if (hasC) rec.c = camp;
             ent.data.push(rec);
           }
         }
