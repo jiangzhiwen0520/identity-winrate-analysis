@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>身份胜率监控台</title>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="echarts.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #0f1420; color: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif; }
@@ -440,25 +440,54 @@ function renderLine() {
   var mode = BASE.mode, s = D.series[mode];
   var roleSet = BASE.roles.filter(function(r){ return s[r]; });
   var dates = D.dates;
+  var dual = BASE.metric === 'dual';
   var series = [];
   roleSet.forEach(function(r, idx){
     var recs = s[r].data;
     var byDate = {};
     recs.forEach(function(x){ byDate[x.d] = x; });
-    var field = BASE.metric === 'pick' ? 'p' : 'w';
-    var vals = dates.map(function(d){ var x = byDate[d]; return x && x[field] != null ? x[field] : null; });
+    var wVals = dates.map(function(d){ var x = byDate[d]; return x && x.w != null ? x.w : null; });
+    var pVals = dates.map(function(d){ var x = byDate[d]; return x && x.p != null ? x.p : null; });
     var color = COLORS[idx % COLORS.length];
-    series.push({
-      name: r, type: 'line', data: vals, showSymbol: false,
-      lineStyle: { width: 2, color: color }, itemStyle: { color: color },
-      emphasis: { focus: 'series', lineStyle: { width: 3 } }
-    });
-    if (BASE.ma) {
+    if (dual) {
+      // 双指标：胜率实线（左轴）+ 选取率虚线（右轴）
       series.push({
-        name: r + '·MA7', type: 'line', data: ma7(vals), showSymbol: false,
-        lineStyle: { width: 1.5, color: color, type: 'dashed', opacity: 0.7 }, itemStyle: { color: color },
-        silent: true, emphasis: { focus: 'series' }
+        name: r + '·胜率', type: 'line', data: wVals, showSymbol: false, yAxisIndex: 0,
+        lineStyle: { width: 2, color: color }, itemStyle: { color: color },
+        emphasis: { focus: 'series', lineStyle: { width: 3 } }
       });
+      series.push({
+        name: r + '·选取', type: 'line', data: pVals, showSymbol: false, yAxisIndex: 1,
+        lineStyle: { width: 2, color: color, type: 'dotted', opacity: 0.95 }, itemStyle: { color: color },
+        emphasis: { focus: 'series', lineStyle: { width: 3 } }
+      });
+      if (BASE.ma) {
+        series.push({
+          name: r + '·胜率MA7', type: 'line', data: ma7(wVals), showSymbol: false, yAxisIndex: 0,
+          lineStyle: { width: 1.2, color: color, type: 'dashed', opacity: 0.55 }, itemStyle: { color: color },
+          silent: true, emphasis: { focus: 'series' }
+        });
+        series.push({
+          name: r + '·选取MA7', type: 'line', data: ma7(pVals), showSymbol: false, yAxisIndex: 1,
+          lineStyle: { width: 1.2, color: color, type: 'dashed', opacity: 0.45 }, itemStyle: { color: color },
+          silent: true, emphasis: { focus: 'series' }
+        });
+      }
+    } else {
+      var field = BASE.metric === 'pick' ? 'p' : 'w';
+      var vals = field === 'p' ? pVals : wVals;
+      series.push({
+        name: r, type: 'line', data: vals, showSymbol: false,
+        lineStyle: { width: 2, color: color }, itemStyle: { color: color },
+        emphasis: { focus: 'series', lineStyle: { width: 3 } }
+      });
+      if (BASE.ma) {
+        series.push({
+          name: r + '·MA7', type: 'line', data: ma7(vals), showSymbol: false,
+          lineStyle: { width: 1.5, color: color, type: 'dashed', opacity: 0.7 }, itemStyle: { color: color },
+          silent: true, emphasis: { focus: 'series' }
+        });
+      }
     }
   });
   var yAxis;
@@ -485,13 +514,17 @@ function renderLine() {
       valueFormatter: function(v){ return v == null ? '-' : fmt(v); },
       formatter: function(params) {
         if (hoverSerie) {
-          var real = hoverSerie.replace('·MA7', '');
-          var hit = params.filter(function(x){ return x.seriesName === real || x.seriesName === real + '·MA7'; });
+          var real = hoverSerie.replace('·MA7', '').replace('·胜率', '').replace('·选取', '');
+          var hit = params.filter(function(x){
+            var n = x.seriesName;
+            return n === real + '·胜率' || n === real + '·选取' || n === real + '·胜率MA7' || n === real + '·选取MA7' || n === real || n === real + '·MA7';
+          });
           if (hit.length) {
             var lines = [];
             hit.forEach(function(x){
               if (x.value == null) return;
-              var tag = x.seriesName === real ? '胜率' : 'MA7';
+              var tag = x.seriesName.replace(real + '·', '').replace('MA7', 'MA7') || '胜率';
+              if (x.seriesName === real) tag = '胜率';
               lines.push(x.marker + ' ' + tag + ': ' + fmt(x.value) + '%');
             });
             if (lines.length) return '<b>' + esc(real) + '</b><br>' + params[0].axisValueLabel + '<br>' + lines.join('<br>');
@@ -519,7 +552,7 @@ function renderLine() {
   if (roleSet.length === 0) { document.getElementById('detail-card').style.display = 'none'; return; }
   lineChart.off('legendselectchanged');
   lineChart.on('legendselectchanged', function(p){
-    var name = p.name.replace('·MA7', '');
+    var name = p.name.replace('·MA7', '').replace('·胜率', '').replace('·选取', '');
     if (p.selected[p.name]) showDetail(mode, name);
   });
 }
@@ -668,7 +701,7 @@ function renderAI() {
     return {
       name: camp, type: 'scatter',
       data: cdata,
-      symbolSize: function(v){ var d = pts[v.idx]; return Math.max(10, Math.min(34, 6 + Math.sqrt(d.n) * 2.2)); },
+      symbolSize: function(val, params){ var d = pts[params.data.idx]; return Math.max(10, Math.min(34, 6 + Math.sqrt(d.n) * 2.2)); },
       itemStyle: { color: campColor[camp] || '#94a3b8', opacity: 0.75 },
       label: { show: true, position: 'top', fontSize: 10, color: '#d1d5db', formatter: function(p){ return pts[p.data.idx].role; } },
       labelLayout: { hideOverlap: true },
@@ -736,11 +769,8 @@ function renderMove(mode, pts) {
 initSidebarModes();
 initMetricBtns();
 rebuildCamps();
-renderChips();
-renderLine();
-renderRisk();
-renderAI();
 
+// 先绑定全部控件事件（独立于渲染，任何渲染失败不影响交互）
 document.getElementById('btn-all').onclick = function(){
   BASE.roles = filteredRoles().slice();
   renderChips(); renderLine();
@@ -769,6 +799,12 @@ document.getElementById('risk-q').oninput = renderRisk;
 document.getElementById('ai-date').onchange = renderAI;
 document.getElementById('ai-win-thr').onchange = renderAI;
 document.getElementById('ai-pick-thr').onchange = renderAI;
+
+// 再执行渲染，各面板独立 try/catch 隔离
+try { renderChips(); } catch (e) { console.error('renderChips 失败', e); }
+try { renderLine(); } catch (e) { console.error('renderLine 失败', e); }
+try { renderRisk(); } catch (e) { console.error('renderRisk 失败', e); }
+try { renderAI(); } catch (e) { console.error('renderAI 失败', e); }
 
 window.addEventListener('resize', function(){ if (lineChart) lineChart.resize(); if (quadChart) quadChart.resize(); });
 })();
