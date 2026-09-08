@@ -207,13 +207,58 @@ tr.role-tbl-row { cursor: pointer; }
 </div>
 
 <script src="roles.js"></script>
-<script src="data.js"></script>
-<script src="risk.js"></script>
+<script src="data_index.js"></script>
 <script>
 (function() {
 "use strict";
-var D = window.OCR_DATA, R = window.RISK_DATA, ROLES = window.ROLES;
-if (!D || !R) { document.querySelector('.main').innerHTML += '<div style="color:#f87171;font-size:13px;padding:20px;">数据文件加载失败：请将 index.html 与 data.js/risk.js/roles.js 放在同一目录。</div>'; return; }
+var ROLES = window.ROLES;
+// ===== 动态加载分块数据并合并 =====
+var D, R;
+if (window.OCR_META && window.DATA_FILES && window.RISK_FILES) {
+  for (var _i = 0; _i < window.DATA_FILES.length; _i++) document.write('<script src="' + window.DATA_FILES[_i] + '"><\/script>');
+  for (var _j = 0; _j < window.RISK_FILES.length; _j++) document.write('<script src="' + window.RISK_FILES[_j] + '"><\/script>');
+  var _dates = [], _series = {};
+  Object.keys(window.DP).sort().forEach(function(key){
+    var p = window.DP[key];
+    _dates = _dates.concat(p.d);
+    Object.keys(p.s).forEach(function(modeIdx){
+      var mi = parseInt(modeIdx, 10);
+      var ridArr = window.OCR_META.rid[mi];
+      var modeName = window.OCR_META.modes[mi];
+      _series[modeName] = _series[modeName] || {};
+      Object.keys(p.s[modeIdx]).forEach(function(roleIdx){
+        var info = p.s[modeIdx][roleIdx];
+        var ridItem = ridArr[parseInt(roleIdx, 10)];
+        var roleName = ridItem[0], camp = ridItem[1];
+        var ent = _series[modeName][roleName] || (_series[modeName][roleName] = { camp: camp, data: [] });
+        var mask = info[0];
+        for (var k = 0; k < p.d.length; k++) {
+          if (info[1][k] != null || info[2][k] != null) {
+            var rec = { d: p.d[k] };
+            if (info[1][k] != null) rec.w = info[1][k];
+            if (info[2][k] != null) rec.p = info[2][k];
+            if (info[3][k] != null) rec.wy = info[3][k];
+            if (info[4][k] != null) rec.py = info[4][k];
+            if (mask && mask.charAt(k) === '1') rec.c = camp;
+            ent.data.push(rec);
+          }
+        }
+      });
+    });
+  });
+  D = { generated: window.OCR_META.generated, modes: window.OCR_META.modes, dates: _dates, series: _series };
+  var _M = window.OCR_META, _alerts = [];
+  Object.keys(window.RP).sort().forEach(function(key){
+    window.RP[key].forEach(function(rec){
+      var mi = parseInt(rec[1], 10);
+      _alerts.push({ date: rec[0], mode: _M.modes[mi], role: _M.rid[mi][parseInt(rec[2], 10)][0], field: _M.f[rec[3]], prev: rec[4], cur: rec[5], delta: rec[6], rule: _M.k[rec[7]], severity: rec[8] });
+    });
+  });
+  R = { threshold: _M.threshold, rules: [], alerts: _alerts };
+} else {
+  D = window.OCR_DATA; R = window.RISK_DATA;
+}
+if (!D || !R) { document.querySelector('.main').innerHTML += '<div style="color:#f87171;font-size:13px;padding:20px;">数据文件加载失败：请将 index.html 与 data_index.js、data_*.js、risk_*.js、roles.js 放在同一目录。</div>'; return; }
 
 function fmt(v, d) { return v == null ? '-' : Number(v).toFixed(d == null ? 1 : d); }
 function esc(s) { return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -247,7 +292,7 @@ function initSidebarModes() {
     b.addEventListener('click', function(){
       BASE.mode = b.dataset.sideMode;
       document.querySelectorAll('.mode-btn').forEach(function(x){ x.classList.toggle('active', x === b); });
-      BASE.roles = rolesOf(BASE.mode).slice();
+      BASE.roles = rolesOf(BASE.mode).slice(); // 切模式默认全选
       rebuildCamps();
       renderChips();
       renderLine();
@@ -256,6 +301,7 @@ function initSidebarModes() {
 }
 
 // ===== 基础监控 =====
+// 默认显示该模式全部身份
 function defaultRoles(mode) { return rolesOf(mode).slice(); }
 var BASE = { mode: D.modes[0], metric: 'win', camp: 'all', roles: defaultRoles(D.modes[0]), ma: true };
 var lineChart = null;
@@ -355,7 +401,9 @@ function renderLine() {
   } else {
     yAxis = [{ type: 'value', name: BASE.metric === 'win' ? '胜率 %' : '选取率 %', axisLabel: { color: '#9ca3af', fontSize: 11 }, splitLine: { lineStyle: { color: '#1e293b' } }, nameTextStyle: { color: '#6b7280' } }];
   }
+  // 默认近 7 天
   var zStart = dates.length > 7 ? Math.round((dates.length - 7) * 100 / dates.length) : 0;
+  // 悬停聚焦：记录当前 hover 的系列，tooltip 只显示该线（及它的 MA7）
   var hoverSerie = null;
   lineChart.off('mouseover');
   lineChart.off('globalout');
@@ -535,9 +583,11 @@ function renderAI() {
   });
   var el = document.getElementById('quad-chart');
   if (!quadChart) quadChart = echarts.init(el);
+  // 强力身份：胜率 > 阈值 且 选取率 > 阈值（固定百分比）
   var strong = pts.filter(function(p){ return p.w != null && p.p != null && p.w > winThr && p.p > pickThr; }).sort(function(a, b){ return (b.w - b.p) - (a.w - a.p); });
   var weak = pts.filter(function(p){ return p.w != null && p.w < 40 && p.p != null && p.p > 1; }).sort(function(a, b){ return a.w - b.w; });
   var campColor = { '入侵者阵营': '#f87171', '宇航员阵营': '#60a5fa', '中立阵营': '#c084fc' };
+  // 按阵营分系列（legend 可开关）
   var campNames = [];
   pts.forEach(function(p){ var c = p.camp || '未知阵营'; if (campNames.indexOf(c) < 0) campNames.push(c); });
   var series = campNames.map(function(camp){
@@ -556,6 +606,7 @@ function renderAI() {
       emphasis: { itemStyle: { opacity: 1 }, label: { show: true, fontWeight: 600 } }
     };
   });
+  // 阈值分割线（挂第一个系列）
   if (series.length) {
     series[0].markLine = {
       silent: true, symbol: 'none',
