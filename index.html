@@ -76,6 +76,11 @@ tr.role-tbl-row { cursor: pointer; }
 .empty-tip { color: #6b7280; font-size: 13px; padding: 24px; text-align: center; }
 .footer { text-align: center; color: #4b5563; font-size: 11px; padding: 20px 0 8px; }
 .tier-badge { display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.camp-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+#daily-card th[data-sort] { cursor: pointer; user-select: none; }
+#daily-card th[data-sort]:hover { color: #e5e7eb; }
+#daily-card th.sorted { color: #7dd3fc; }
+#daily-card th.sorted::after { content: attr(data-arrow); margin-left: 4px; font-size: 10px; }
 .quad-below { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
 .quad-col { flex: 1 1 240px; min-width: 0; }
 #quad-chart { width: 100%; max-width: 640px; aspect-ratio: 1 / 1; margin: 0 auto; }
@@ -195,6 +200,16 @@ tr.role-tbl-row { cursor: pointer; }
       <div class="chart-card" id="detail-card" style="display:none;">
         <div class="chart-title"><span class="dot" style="background:#4ade80;"></span>身份详情：<span id="detail-name"></span></div>
         <div class="grid-cards" id="detail-metrics"></div>
+      </div>
+      <div class="chart-card" id="daily-card">
+        <div class="chart-title"><span class="dot" style="background:#22d3ee;"></span>每日数据明细<span class="formula-note">与源数据同格式 · 点击列头排序 · 点击行查看该身份趋势</span><span class="spacer"></span><label style="font-size:12px;color:#9ca3af;">日期</label><select id="daily-date"></select><label style="font-size:12px;color:#9ca3af;margin-left:10px;">模式</label><span id="daily-mode-label" style="font-size:13px;color:#e5e7eb;font-weight:600;"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th data-sort="role">身份</th><th>阵营</th><th data-sort="w">胜率</th><th data-sort="p">选取率</th><th data-sort="wy">胜率同比</th><th data-sort="py">选取率同比</th><th data-sort="str">强度</th></tr></thead>
+            <tbody id="daily-tbody"></tbody>
+          </table>
+          <div class="empty-tip" id="daily-empty" style="display:none;">该日期暂无数据</div>
+        </div>
       </div>
     </div>
 
@@ -443,6 +458,7 @@ function initSidebarModes() {
       rebuildCamps();
       renderChips();
       renderLine();
+      renderDailyTable();
     });
   });
 }
@@ -653,6 +669,70 @@ function showDetail(mode, role) {
   document.getElementById('detail-metrics').innerHTML = h;
 }
 
+// ===== 每日数据明细（基础监控页下方，源数据表格式） =====
+var DAILY = { date: null, sort: 'w', asc: false };
+var CAMP_COLOR = { '入侵者阵营': '#f87171', '宇航员阵营': '#60a5fa', '中立阵营': '#c084fc' };
+
+function initDaily() {
+  var sel = document.getElementById('daily-date');
+  if (!sel) return;
+  var ds = D.dates.slice().reverse();
+  ds.forEach(function(d){ sel.insertAdjacentHTML('beforeend', '<option value="' + d + '">' + d + '</option>'); });
+  DAILY.date = ds[0] || null;
+  sel.onchange = function(){ DAILY.date = this.value; renderDailyTable(); };
+  document.querySelectorAll('#daily-card th[data-sort]').forEach(function(th){
+    th.addEventListener('click', function(){
+      var f = th.dataset.sort;
+      if (DAILY.sort === f) DAILY.asc = !DAILY.asc; else { DAILY.sort = f; DAILY.asc = false; }
+      renderDailyTable();
+    });
+  });
+}
+
+function renderDailyTable() {
+  var mode = BASE.mode, s = D.series[mode] || {};
+  var date = DAILY.date;
+  var rows = [];
+  Object.keys(s).forEach(function(r){
+    var byD = {};
+    s[r].data.forEach(function(x){ byD[x.d] = x; });
+    var rec = byD[date];
+    if (!rec) return;
+    rows.push({ role: r, camp: s[r].camp, w: rec.w, p: rec.p, wy: rec.wy, py: rec.py });
+  });
+  var f = DAILY.sort;
+  rows.sort(function(a, b){
+    if (f === 'role') { return DAILY.asc ? (a.role < b.role ? -1 : a.role > b.role ? 1 : 0) : (a.role > b.role ? -1 : a.role < b.role ? 1 : 0); }
+    var va = a[f] == null ? -1e9 : a[f], vb = b[f] == null ? -1e9 : b[f];
+    if (va === vb) return 0;
+    return DAILY.asc ? va - vb : vb - va;
+  });
+  var h = '';
+  rows.forEach(function(r){
+    var str = r.w != null && r.p != null ? r.w * Math.sqrt(r.p) / 10 : null;
+    var ccol = CAMP_COLOR[r.camp] || '#94a3b8';
+    h += '<tr class="role-tbl-row" data-role="' + esc(r.role) + '" data-mode="' + esc(mode) + '">' +
+      '<td><b>' + esc(r.role) + '</b></td>' +
+      '<td><span class="camp-dot" style="background:' + ccol + ';"></span>' + esc(r.camp || '-') + '</td>' +
+      '<td>' + fmt(r.w) + '%</td>' +
+      '<td>' + fmt(r.p) + '%</td>' +
+      '<td class="' + (r.wy == null ? '' : r.wy >= 0 ? 'pos' : 'neg') + '">' + (r.wy == null ? '-' : (r.wy > 0 ? '+' : '') + fmt(r.wy)) + '</td>' +
+      '<td class="' + (r.py == null ? '' : r.py >= 0 ? 'pos' : 'neg') + '">' + (r.py == null ? '-' : (r.py > 0 ? '+' : '') + fmt(r.py)) + '</td>' +
+      '<td>' + (str == null ? '-' : fmt(str)) + '</td></tr>';
+  });
+  document.getElementById('daily-tbody').innerHTML = h;
+  document.getElementById('daily-empty').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('daily-mode-label').textContent = modeName(mode);
+  document.querySelectorAll('#daily-card th[data-sort]').forEach(function(th){
+    var on = th.dataset.sort === DAILY.sort;
+    th.classList.toggle('sorted', on);
+    th.setAttribute('data-arrow', on ? (DAILY.asc ? ' ▲' : ' ▼') : '');
+  });
+  document.querySelectorAll('#daily-tbody .role-tbl-row').forEach(function(tr){
+    tr.addEventListener('click', function(){ jumpToBase(tr.dataset.mode, tr.dataset.role, 'win'); });
+  });
+}
+
 // ===== 风险监控 =====
 function sevLabel(s) { return s >= 3 ? '<span class="badge s3">高</span>' : s === 2 ? '<span class="badge s2">中</span>' : '<span class="badge s1">低</span>'; }
 function ruleLabel(r) { return r === 'single_day' ? '单日突变' : r === 'trend_3d' ? '连续3日' : '7日异常'; }
@@ -704,6 +784,7 @@ function jumpToBase(mode, role, field) {
   initMetricBtns();
   renderChips();
   renderLine();
+  renderDailyTable();
   if (lineChart) lineChart.dispatchAction({ type: 'legendSelect', name: role });
   showDetail(mode, role);
   document.getElementById('detail-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -842,6 +923,7 @@ function renderMove(mode, pts) {
 initSidebarModes();
 initMetricBtns();
 rebuildCamps();
+initDaily();
 
 // 先绑定全部控件事件（独立于渲染，任何渲染失败不影响交互）
 document.getElementById('btn-all').onclick = function(){
@@ -883,6 +965,7 @@ document.getElementById('ai-pick-thr').onchange = renderAI;
 // 再执行渲染，各面板独立 try/catch 隔离
 try { renderChips(); } catch (e) { console.error('renderChips 失败', e); }
 try { renderLine(); } catch (e) { console.error('renderLine 失败', e); }
+try { renderDailyTable(); } catch (e) { console.error('renderDailyTable 失败', e); }
 try { renderRisk(); } catch (e) { console.error('renderRisk 失败', e); }
 try { renderAI(); } catch (e) { console.error('renderAI 失败', e); }
 
