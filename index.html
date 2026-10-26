@@ -3,110 +3,1041 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>太空杀 玩法胜率数据看板</title>
+<title>身份胜率监控台</title>
+<script src="echarts.min.js"></script>
 <style>
-body{font-family:'Microsoft YaHei',sans-serif;margin:0;background:#0f1420;color:#e8ecf4;}
-header{background:linear-gradient(135deg,#1a2332,#2c3e50);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:2px solid #3498db;}
-header h1{margin:0;font-size:22px;color:#fff;}
-header .meta{font-size:13px;color:#aab4c4;}
-#controls{background:#1a2332;padding:12px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid #2c3e50;position:sticky;top:0;z-index:10;}
-#controls label{font-size:13px;color:#aab4c4;}
-select,button{background:#2c3e50;color:#e8ecf4;border:1px solid #3d5167;border-radius:6px;padding:6px 12px;font-size:14px;cursor:pointer;}
-select:focus,button:focus{outline:2px solid #3498db;}
-#mode-select{margin-right:4px;}
-main{max-width:1200px;margin:20px auto;padding:0 16px;}
-#summary{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
-.sum-card{background:#1a2332;border:1px solid #2c3e50;border-radius:10px;padding:12px 18px;flex:1;min-width:150px;text-align:center;}
-.sum-card .num{font-size:26px;font-weight:bold;color:#3498db;}
-.sum-card .lbl{font-size:12px;color:#aab4c4;margin-top:4px;}
-#chart{background:#1a2332;border:1px solid #2c3e50;border-radius:10px;padding:12px;margin-bottom:16px;}
-#chart-title{font-size:14px;color:#aab4c4;margin:4px 8px 8px;}
-#table-wrap{overflow-x:auto;background:#1a2332;border:1px solid #2c3e50;border-radius:10px;}
-table{border-collapse:collapse;width:100%;font-size:13px;}
-th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #24303f;white-space:nowrap;}
-th{background:#24303f;color:#aab4c4;position:sticky;top:110px;z-index:5;}
-tr:hover{background:#223047;}
-.pos{color:#2ecc71;}
-.neg{color:#e74c3c;}
-.up{color:#2ecc71;}
-.down{color:#e74c3c;}
-.warn{background:rgba(231,76,60,.18);}
-#footer{text-align:center;color:#5b6b80;font-size:12px;padding:20px 0 30px;}
-#legend{display:flex;gap:14px;margin:0 8px 6px;font-size:12px;color:#aab4c4;}
-#legend span{display:inline-flex;align-items:center;gap:4px;}
-.dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
-.tooltip{position:fixed;background:rgba(20,28,40,.95);border:1px solid #3498db;border-radius:8px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:100;max-width:320px;display:none;line-height:1.6;}
-@media(max-width:640px){header h1{font-size:18px;}th,td{padding:6px 8px;}main{padding:0 8px;}}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1420; color: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif; }
+.layout { display: flex; min-height: 100vh; }
+
+/* ===== 左侧导航 ===== */
+.sidebar { width: 218px; flex: 0 0 218px; background: #0c1220; border-right: 1px solid #1a2332; padding: 18px 12px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sidebar .logo { font-size: 17px; font-weight: 700; color: #4ade80; letter-spacing: .5px; padding: 2px 10px 14px; border-bottom: 1px solid #1a2332; }
+.sidebar .logo small { display: block; font-size: 11px; color: #6b7280; font-weight: 400; margin-top: 4px; letter-spacing: 0; }
+.nav-btn { display: block; width: 100%; text-align: left; background: none; border: none; color: #94a3b8; font-size: 14px; padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-top: 6px; transition: all .12s; }
+.nav-btn:hover { background: #16203a; color: #d1d5db; }
+.nav-btn.active { background: #1e3a5f; color: #7dd3fc; font-weight: 600; }
+.mode-sub { display: none; padding: 4px 0 4px 14px; }
+.mode-sub.open { display: block; }
+.mode-btn { display: block; width: 100%; text-align: left; background: none; border: none; color: #64748b; font-size: 12.5px; padding: 7px 12px; border-radius: 7px; cursor: pointer; }
+.mode-btn:hover { background: #16203a; color: #cbd5e1; }
+.mode-btn.active { color: #4ade80; font-weight: 600; background: rgba(74,222,128,.08); }
+.sidebar-foot { display: none; }
+
+/* ===== 主内容区 ===== */
+.main { flex: 1; min-width: 0; padding: 18px 22px 30px; }
+.panel { display: none; }
+.panel.active { display: block; }
+.page-title { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 14px; }
+.page-title .sub { font-size: 12px; color: #6b7280; font-weight: 400; margin-left: 10px; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; background: #151b2e; border-radius: 12px; padding: 12px 14px; }
+.ctrl-row { display: contents; }
+.controls label { font-size: 12px; color: #9ca3af; white-space: nowrap; }
+.controls select, .controls input[type=number], .controls input[type=text], .controls input[type=date] { background: #1e293b; border: 1px solid #2d3748; border-radius: 6px; padding: 5px 8px; color: #e5e7eb; font-size: 13px; }
+.controls select:focus, .controls input:focus { outline: none; border-color: #3b82f6; }
+.btn { background: #1e3a5f; border: none; border-radius: 6px; padding: 6px 12px; color: #93c5fd; font-size: 12px; cursor: pointer; transition: all .12s; }
+.btn:hover { background: #2d4a6f; }
+.btn.active { background: #3b82f6; color: #fff; }
+.chart-card { background: #151b2e; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+.chart-title { color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.chart-title .spacer { flex: 1; }
+.fs-btn { background: #1e293b; border: 1px solid #2d3748; border-radius: 6px; padding: 4px 10px; color: #94a3b8; font-size: 12px; cursor: pointer; transition: all .12s; }
+.fs-btn:hover { background: #2d4a6f; color: #fff; }
+.chart-title .spacer { flex: 1; }
+.fs-btn { background: #1e293b; border: 1px solid #2d3748; border-radius: 6px; padding: 4px 10px; color: #94a3b8; font-size: 12px; cursor: pointer; transition: all .12s; }
+.fs-btn:hover { background: #2d4a6f; color: #fff; }
+.chart-title .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.chart-title .formula-note { font-size: 11px; color: #6b7280; font-weight: 400; margin-left: 6px; }
+.chart-box { position: relative; width: 100%; height: 460px; }
+.grid-cards { display: flex; gap: 12px; flex-wrap: wrap; }
+.metric-card { flex: 1 1 140px; min-width: 0; background: #1a2234; border-radius: 12px; padding: 12px; }
+.metric-card .v { font-size: 20px; font-weight: 700; margin-top: 4px; }
+.metric-card .l { font-size: 11px; color: #6b7280; }
+.metric-card .v.up { color: #4ade80; } .metric-card .v.down { color: #f87171; }
+.role-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips-toggle { display: none; }
+.role-chip { background: #1e293b; border: 1px solid #2d3748; border-radius: 16px; padding: 4px 12px; font-size: 12px; color: #d1d5db; cursor: pointer; transition: all .1s; }
+.role-chip:hover { border-color: #3b82f6; }
+.role-chip.sel { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.role-chip.hot { background: rgba(74,222,128,.12); border-color: rgba(74,222,128,.4); color: #4ade80; }
+.role-chip.weak { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.35); color: #f87171; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { background: #1e293b; color: #94a3b8; padding: 8px 10px; text-align: left; font-weight: 600; white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 1px solid #1e293b; white-space: nowrap; }
+tr.alert-row { cursor: pointer; }
+tr.alert-row:hover, tr.role-tbl-row:hover { background: #1e293b; }
+tr.role-tbl-row { cursor: pointer; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10.5px; font-weight: 600; }
+.badge.s3 { background: rgba(239,68,68,.2); color: #f87171; }
+.badge.s2 { background: rgba(250,173,20,.18); color: #fbbf24; }
+.badge.s1 { background: rgba(96,165,250,.15); color: #93c5fd; }
+.pos { color: #4ade80; } .neg { color: #f87171; }
+.empty-tip { color: #6b7280; font-size: 13px; padding: 24px; text-align: center; }
+.footer { text-align: center; color: #4b5563; font-size: 11px; padding: 20px 0 8px; }
+.tier-badge { display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.camp-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.camp-group-row td { background: #1f2a44; color: #e5e7eb; font-weight: 700; font-size: 12px; padding: 6px 10px; border-top: 2px solid #2c3a5e; letter-spacing: 1px; }
+#daily-card th[data-sort] { cursor: pointer; user-select: none; }
+#daily-card th[data-sort]:hover { color: #e5e7eb; }
+#daily-card th.sorted { color: #7dd3fc; }
+#daily-card th.sorted::after { content: attr(data-arrow); margin-left: 4px; font-size: 10px; }
+.quad-below { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+.quad-col { flex: 1 1 240px; min-width: 0; }
+#quad-chart { width: 100%; max-width: 640px; aspect-ratio: 1 / 1; margin: 0 auto; }
+
+/* ===== 移动端 ===== */
+@media (max-width: 820px) {
+  .layout { flex-direction: column; }
+  .sidebar { width: 100%; flex: none; height: auto; position: static; border-right: none; border-bottom: 1px solid #1a2332; padding: 12px 12px 10px; }
+  .sidebar .logo { padding: 2px 2px 10px; border-bottom: 1px solid #1a2332; margin-bottom: 10px; font-size: 16px; }
+  .sidebar .logo small { display: block; }
+  .sidebar nav { display: flex; flex-wrap: wrap; gap: 6px; }
+  .nav-btn { width: auto; flex: 1 1 30%; min-width: 0; text-align: center; margin: 0; padding: 10px 8px; font-size: 13.5px; border-radius: 8px; }
+  .mode-sub { display: none; width: 100%; padding: 8px 0 0; }
+  .mode-sub.open { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 100%; order: 10; }
+  .mode-btn { width: auto; flex: 1 1 30%; min-width: 0; text-align: center; padding: 9px 8px; font-size: 13px; }
+  .sidebar-foot { display: none; }
+  .main { padding: 14px 12px 28px; }
+  .page-title { font-size: 17px; margin-bottom: 12px; }
+  .controls { padding: 10px; gap: 8px; align-items: flex-start; }
+  .controls label { font-size: 12px; padding-top: 8px; }
+  .controls select, .controls input[type=number], .controls input[type=text], .controls input[type=date] { min-height: 38px; font-size: 14px; padding: 6px 8px; }
+  .btn { min-height: 38px; padding: 8px 12px; font-size: 13px; }
+  .chart-card { padding: 12px; border-radius: 12px; }
+  .chart-title { font-size: 13.5px; flex-wrap: wrap; }
+  .chart-title .formula-note { width: 100%; margin: 4px 0 0; line-height: 1.5; }
+  .chart-box { height: 300px; }
+  .metric-card { flex: 1 1 44%; }
+  .metric-card .v { font-size: 18px; }
+  .role-chip { padding: 7px 12px; font-size: 13px; flex: 0 0 auto; }
+  .role-list { gap: 8px; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  .role-list.expanded { flex-wrap: wrap; overflow-x: visible; white-space: normal; }
+  #chips-bar { display: flex; align-items: center; gap: 8px; }
+  #chips-bar .btn { flex: 0 0 auto; }
+  .chips-toggle { display: inline-block; }
+  table { font-size: 12px; }
+  th, td { padding: 8px 8px; }
+  #quad-chart { max-width: 100%; }
+  .quad-below { gap: 12px; }
+  .quad-col { flex: 1 1 100%; }
+  .empty-tip { padding: 16px; }
+}
+/* 更小屏（≤420px）：控件更紧凑 */
+@media (max-width: 420px) {
+  .controls .btn, .controls select, .controls input { flex: 1 1 auto; }
+  .nav-btn { flex: 1 1 100%; }
+  .mode-btn { flex: 1 1 48%; }
+  .chart-box { height: 280px; }
+  .metric-card { flex: 1 1 100%; }
+}
+/* ===== 图表全屏（放大/旋转） ===== */
+#fs-overlay { position: fixed; inset: 0; background: #0b0f1a; z-index: 9999; display: none; flex-direction: column; }
+#fs-overlay.show { display: flex; }
+#fs-bar { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid #1a2332; }
+#fs-bar .fs-t { font-size: 13px; color: #9ca3af; flex: 1; }
+#fs-stage-wrap { flex: 1; position: relative; overflow: hidden; }
+#fs-stage { position: absolute; left: 50%; top: 50%; width: calc(100vw - 24px); height: calc(100vh - 74px); transform: translate(-50%, -50%); transition: transform .25s ease, width .25s ease, height .25s ease; }
+#fs-stage.rot { width: calc(100vh - 74px); height: calc(100vw - 24px); transform: translate(-50%, -50%) rotate(90deg); }
+#fs-chart { width: 100%; height: 100%; }
+@media (max-width: 820px) {
+  .controls label { display: none; }
+  .controls { justify-content: flex-start; }
+  .controls .btn, .controls select { flex: 1 1 44%; max-width: none; }
+  .controls #metric-btns { display: contents; }
+  .chart-box { height: 340px; }
+  .fs-btn { padding: 6px 12px; font-size: 13px; }
+  /* 基础监控控件：两行网格（指标行 3 列 + 操作行 4 列） */
+  .ctrl-row { display: grid; gap: 8px; align-items: center; }
+  #ctrl-metric { grid-template-columns: repeat(3, 1fr); }
+  #ctrl-ops { grid-template-columns: repeat(4, 1fr); }
+  #ctrl-metric .btn, #ctrl-ops .btn, #ctrl-ops select { width: 100%; max-width: none; min-height: 38px; padding: 8px 4px; }
+}
 </style>
 </head>
 <body>
-<header>
-<h1>太空杀 玩法胜率数据看板</h1>
-<div class="meta" id="generated">数据更新至 2026-10-25</div>
-</header>
-<div id="controls">
-<label for="mode-select">玩法模式</label>
-<select id="mode-select"><option value="1">诸神排位</option><option value="2">特别行动单人排位</option><option value="0">巅峰赛</option></select>
-<label for="date-select">数据日期</label>
-<select id="date-select"></select>
-<label for="camp-select">阵营</label>
-<select id="camp-select"><option value="">全部</option><option value="船员阵营">船员阵营</option><option value="入侵者阵营">入侵者阵营</option><option value="中立阵营">中立阵营</option></select>
-<button id="btn-last7">近7天</button>
-<button id="btn-last30">近30天</button>
-<button id="btn-all">全部</button>
-<button id="btn-reset">重置</button>
-<span id="rows-count" style="margin-left:auto;font-size:12px;color:#aab4c4;"></span>
+<div class="layout">
+
+  <!-- ===== 左侧导航 ===== -->
+  <aside class="sidebar">
+    <div class="logo">身份胜率监控台</div>
+    <nav>
+      <button class="nav-btn active" data-panel="base">基础监控</button>
+      <div class="mode-sub open" id="sidebar-modes"></div>
+      <button class="nav-btn" data-panel="risk">风险监控</button>
+      <button class="nav-btn" data-panel="ai">AI 分析</button>
+    </nav>
+  </aside>
+
+  <!-- ===== 主内容区 ===== -->
+  <main class="main">
+
+    <!-- ===== 基础监控 ===== -->
+    <div class="panel active" id="panel-base">
+      <div class="page-title">基础监控</div>
+      <div class="controls">
+        <div class="ctrl-row" id="ctrl-metric">
+          <label>指标</label>
+          <span id="metric-btns"></span>
+        </div>
+        <div class="ctrl-row" id="ctrl-ops">
+          <label>阵营</label>
+          <select id="camp-sel"><option value="all">全部</option></select>
+          <button class="btn" id="btn-all">全选</button>
+          <button class="btn" id="btn-none">清空</button>
+          <label style="margin-left:6px;">趋势线</label>
+          <button class="btn active" id="btn-ma">MA7</button>
+        </div>
+      </div>
+      <div class="controls">
+        <label>身份（点击选择，可多选）</label>
+        <button class="btn chips-toggle" id="btn-chips-toggle">全部身份 ▾</button>
+        <div class="role-list" id="role-chips"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><span class="dot" style="background:#60a5fa;"></span><span id="line-title">胜率趋势</span><span class="formula-note" id="formula-note" style="display:none;">强度 = 胜率% × √选取率% ÷ 10（选取率&lt;2% 记为样本不足）</span><span class="spacer"></span><button class="fs-btn" id="fs-line-btn">全屏</button></div>
+        <div class="chart-box" id="line-chart"></div>
+      </div>
+      <div class="chart-card" id="detail-card" style="display:none;">
+        <div class="chart-title"><span class="dot" style="background:#4ade80;"></span>身份详情：<span id="detail-name"></span></div>
+        <div class="grid-cards" id="detail-metrics"></div>
+      </div>
+      <div class="chart-card" id="daily-card">
+        <div class="chart-title"><span class="dot" style="background:#22d3ee;"></span>每日数据明细<span class="formula-note">与源数据同格式 · 默认按阵营分组、组内按胜率排序 · 点击列头可换排序 · 点击行查看该身份趋势</span><span class="spacer"></span><label style="font-size:12px;color:#9ca3af;">日期</label><select id="daily-date"></select><label style="font-size:12px;color:#9ca3af;margin-left:10px;">模式</label><span id="daily-mode-label" style="font-size:13px;color:#e5e7eb;font-weight:600;"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th data-sort="role">身份</th><th data-sort="camp">阵营</th><th data-sort="w">胜率</th><th data-sort="p">选取率</th><th data-sort="wy">胜率同比</th><th data-sort="py">选取率同比</th><th data-sort="str">强度</th></tr></thead>
+            <tbody id="daily-tbody"></tbody>
+          </table>
+          <div class="empty-tip" id="daily-empty" style="display:none;">该日期暂无数据</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 风险监控 ===== -->
+    <div class="panel" id="panel-risk">
+      <div class="page-title">风险监控</div>
+      <div class="controls">
+        <label>突变阈值(pp)</label>
+        <input type="number" id="risk-thr" value="5" min="1" max="30" style="width:60px;">
+        <label style="margin-left:6px;">规则</label>
+        <button class="btn active" id="rule-single">单日突变</button>
+        <button class="btn active" id="rule-trend">连续3日</button>
+        <button class="btn active" id="rule-z">7日异常</button>
+        <label style="margin-left:6px;">模式</label>
+        <select id="risk-mode"><option value="all">全部</option></select>
+        <label style="margin-left:6px;">严重度</label>
+        <select id="risk-sev"><option value="all">全部</option><option value="3">高</option><option value="2">中</option><option value="1">低</option></select>
+        <label style="margin-left:6px;">搜索</label>
+        <input type="text" id="risk-q" placeholder="身份名" style="width:110px;">
+        <span style="margin-left:auto;font-size:12px;color:#6b7280;" id="risk-count"></span>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><span class="dot" style="background:#fbbf24;"></span>预警列表（点击行跳转折线图高亮）</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>日期</th><th>模式</th><th>身份</th><th>指标</th><th>前值</th><th>现值</th><th>变化</th><th>触发规则</th><th>严重度</th></tr></thead>
+            <tbody id="risk-tbody"></tbody>
+          </table>
+          <div class="empty-tip" id="risk-empty" style="display:none;">无匹配预警</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== AI 分析 ===== -->
+    <div class="panel" id="panel-ai">
+      <div class="page-title">AI 分析</div>
+      <div class="controls">
+        <label>模式</label>
+        <span id="ai-mode-btns"></span>
+        <label>区间</label>
+        <button class="btn active" id="ai-r7">近7日</button>
+        <button class="btn" id="ai-r30">近30日</button>
+        <button class="btn" id="ai-all">全期</button>
+        <label style="margin-left:6px;">自定义日期</label>
+        <input type="date" id="ai-date">
+        <label style="margin-left:6px;">强力判定：胜率 &gt;</label>
+        <input type="number" id="ai-win-thr" value="55" min="1" max="100" style="width:56px;">
+        <label>% · 选取率 &gt;</label>
+        <input type="number" id="ai-pick-thr" value="10" min="0" max="100" style="width:56px;">
+        <label>%</label>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><span class="dot" style="background:#94d8c3;"></span>四象限：选取率 × 胜率（右上 = 强力身份，阈值可调）<span class="spacer"></span><button class="fs-btn" id="fs-quad-btn">全屏</button></div>
+        <div id="quad-chart"></div>
+        <div class="quad-below">
+          <div class="quad-col">
+            <div class="chart-title" style="font-size:13px;margin-bottom:8px;">强力身份判定</div>
+            <div class="role-list" id="quad-strong"></div>
+          </div>
+          <div class="quad-col">
+            <div class="chart-title" style="font-size:13px;margin:0 0 8px;">弱势关注</div>
+            <div class="role-list" id="quad-weak"></div>
+          </div>
+          <div class="quad-col">
+            <div class="chart-title" style="font-size:13px;margin:0 0 8px;">近期 vs 全期 迁移</div>
+            <div class="table-wrap"><table id="quad-move"><thead><tr><th>身份</th><th>胜率Δ</th><th>选取Δ</th></tr></thead><tbody></tbody></table></div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><span class="dot" style="background:#eaa7b2;"></span>舆情分析（预留）</div>
+        <div class="empty-tip">接口未接入。后续在 config 中填入舆情 API 后，此处将展示该身份相关的社区讨论热度与情绪摘要。</div>
+      </div>
+    </div>
+
+  </main>
 </div>
-<main>
-<div id="summary"></div>
-<div id="chart">
-<div id="chart-title">各身份胜率与选取率趋势</div>
-<div id="legend"><span><i class="dot" style="background:#3498db;"></i>胜率</span><span><i class="dot" style="background:#e67e22;"></i>选取率</span></div>
-<div id="chart-canvas" style="height:360px;"></div>
+
+<div id="fs-overlay">
+  <div id="fs-bar">
+    <span class="fs-t" id="fs-title">全屏图表</span>
+    <button class="fs-btn" id="fs-rot-btn">旋转 90°</button>
+    <button class="fs-btn" id="fs-close-btn">关闭</button>
+  </div>
+  <div id="fs-stage-wrap"><div id="fs-stage"><div id="fs-chart"></div></div></div>
 </div>
-<div id="table-wrap">
-<table id="data-table">
-<thead><tr><th>身份</th><th>阵营</th><th>胜率</th><th>选取率</th><th>胜率同比</th><th>选取率同比</th><th>趋势</th></tr></thead>
-<tbody></tbody>
-</table>
-</div>
-</main>
-<div class="tooltip" id="tooltip"></div>
-<footer id="footer">数据来源：闭门造车玩法小组 · 职业胜率机器人每日发布 · 自动采集更新</footer>
-<script src="data_index.js"></script>
+
 <script src="roles.js"></script>
-<script src="data_2026-07.js"></script>
-<script src="data_2026-07b.js"></script>
-<script src="data_2026-07c.js"></script>
-<script src="data_2026-07d.js"></script>
-<script src="data_2026-08.js"></script>
-<script src="data_2026-08b.js"></script>
-<script src="data_2026-08c.js"></script>
-<script src="data_2026-08d.js"></script>
-<script src="data_2026-09.js"></script>
-<script src="data_2026-09b.js"></script>
-<script src="data_2026-09c.js"></script>
-<script src="data_2026-09d.js"></script>
-<script src="data_2026-10.js"></script>
-<script src="data_2026-10b.js"></script>
-<script src="data_2026-10c.js"></script>
-<script src="data_2026-10d.js"></script>
-<script src="risk_2026-07.js"></script>
-<script src="risk_2026-07b.js"></script>
-<script src="risk_2026-07c.js"></script>
-<script src="risk_2026-07d.js"></script>
-<script src="risk_2026-08.js"></script>
-<script src="risk_2026-08b.js"></script>
-<script src="risk_2026-08c.js"></script>
-<script src="risk_2026-08d.js"></script>
-<script src="risk_2026-09.js"></script>
-<script src="risk_2026-09b.js"></script>
-<script src="risk_2026-09c.js"></script>
-<script src="risk_2026-09d.js"></script>
-<script src="risk_2026-10.js"></script>
-<script src="risk_2026-10b.js"></script>
-<script src="risk_2026-10c.js"></script>
-<script src="risk_2026-10d.js"></script>
-<script src="app.js"></script>
+<script src="data_index.js"></script>
+<!-- DATA_CHUNKS -->
+    <script src="data_2025-12d.js"></script>
+    <script src="data_2026-01a.js"></script>
+    <script src="data_2026-01b.js"></script>
+    <script src="data_2026-01c.js"></script>
+    <script src="data_2026-01d.js"></script>
+    <script src="data_2026-02a.js"></script>
+    <script src="data_2026-02b.js"></script>
+    <script src="data_2026-02c.js"></script>
+    <script src="data_2026-02d.js"></script>
+    <script src="data_2026-03a.js"></script>
+    <script src="data_2026-03b.js"></script>
+    <script src="data_2026-03c.js"></script>
+    <script src="data_2026-03d.js"></script>
+    <script src="data_2026-04a.js"></script>
+    <script src="data_2026-04b.js"></script>
+    <script src="data_2026-04c.js"></script>
+    <script src="data_2026-04d.js"></script>
+    <script src="data_2026-05a.js"></script>
+    <script src="data_2026-05b.js"></script>
+    <script src="data_2026-05c.js"></script>
+    <script src="data_2026-05d.js"></script>
+    <script src="data_2026-06a.js"></script>
+    <script src="data_2026-06b.js"></script>
+    <script src="data_2026-06c.js"></script>
+    <script src="data_2026-06d.js"></script>
+    <script src="data_2026-07a.js"></script>
+    <script src="data_2026-07b.js"></script>
+    <script src="data_2026-07c.js"></script>
+    <script src="data_2026-07d.js"></script>
+    <script src="data_2026-08a.js"></script>
+    <script src="data_2026-08b.js"></script>
+    <script src="data_2026-08c.js"></script>
+    <script src="data_2026-08d.js"></script>
+    <script src="data_2026-09a.js"></script>
+    <script src="data_2026-09b.js"></script>
+    <script src="data_2026-09c.js"></script>
+    <script src="data_2026-09d.js"></script>
+    <script src="data_2026-10a.js"></script>
+    <script src="data_2026-10b.js"></script>
+    <script src="data_2026-10c.js"></script>
+    <script src="data_2026-10d.js"></script>
+    <script src="risk_2026-01a.js"></script>
+    <script src="risk_2026-01b.js"></script>
+    <script src="risk_2026-01c.js"></script>
+    <script src="risk_2026-01d.js"></script>
+    <script src="risk_2026-02a.js"></script>
+    <script src="risk_2026-02b.js"></script>
+    <script src="risk_2026-02c.js"></script>
+    <script src="risk_2026-02d.js"></script>
+    <script src="risk_2026-03a.js"></script>
+    <script src="risk_2026-03b.js"></script>
+    <script src="risk_2026-03c.js"></script>
+    <script src="risk_2026-03d.js"></script>
+    <script src="risk_2026-04a.js"></script>
+    <script src="risk_2026-04b.js"></script>
+    <script src="risk_2026-04c.js"></script>
+    <script src="risk_2026-04d.js"></script>
+    <script src="risk_2026-05a.js"></script>
+    <script src="risk_2026-05b.js"></script>
+    <script src="risk_2026-05c.js"></script>
+    <script src="risk_2026-05d.js"></script>
+    <script src="risk_2026-06a.js"></script>
+    <script src="risk_2026-06b.js"></script>
+    <script src="risk_2026-06c.js"></script>
+    <script src="risk_2026-06d.js"></script>
+    <script src="risk_2026-07a.js"></script>
+    <script src="risk_2026-07b.js"></script>
+    <script src="risk_2026-07c.js"></script>
+    <script src="risk_2026-07d.js"></script>
+    <script src="risk_2026-08a.js"></script>
+    <script src="risk_2026-08b.js"></script>
+    <script src="risk_2026-08c.js"></script>
+    <script src="risk_2026-08d.js"></script>
+    <script src="risk_2026-09a.js"></script>
+    <script src="risk_2026-09b.js"></script>
+    <script src="risk_2026-09c.js"></script>
+    <script src="risk_2026-09d.js"></script>
+    <script src="risk_2026-10a.js"></script>
+    <script src="risk_2026-10b.js"></script>
+    <script src="risk_2026-10c.js"></script>
+    <script src="risk_2026-10d.js"></script>
+    <!-- /DATA_CHUNKS -->
+<script>
+(function() {
+"use strict";
+var ROLES = window.ROLES;
+// ===== 动态加载分块数据并合并 =====
+var D, R;
+if (window.OCR_META && window.DATA_FILES && window.RISK_FILES) {
+  var _dates = [], _series = {};
+  Object.keys(window.DP).sort().forEach(function(key){
+    var p = window.DP[key];
+    _dates = _dates.concat(p.d);
+    Object.keys(p.s).forEach(function(modeIdx){
+      var mi = parseInt(modeIdx, 10);
+      var ridArr = window.OCR_META.rid[mi];
+      var modeName = window.OCR_META.modes[mi];
+      _series[modeName] = _series[modeName] || {};
+      Object.keys(p.s[modeIdx]).forEach(function(roleIdx){
+        var info = p.s[modeIdx][roleIdx];
+        var ridItem = ridArr[parseInt(roleIdx, 10)];
+        var roleName = ridItem[0], camp = ridItem[1];
+        var ent = _series[modeName][roleName] || (_series[modeName][roleName] = { camp: camp, data: [] });
+        var mask = info[0];
+        var maskStr = (mask === '1' || mask === '0') ? null : mask;
+        for (var k = 0; k < p.d.length; k++) {
+          if (info[1][k] != null || info[2][k] != null) {
+            var rec = { d: p.d[k] };
+            if (info[1][k] != null) rec.w = info[1][k];
+            if (info[2][k] != null) rec.p = info[2][k];
+            if (info[3][k] != null) rec.wy = info[3][k];
+            if (info[4][k] != null) rec.py = info[4][k];
+            var hasC = (mask === '1') || (maskStr && maskStr.charAt(k) === '1');
+            if (hasC) rec.c = camp;
+            ent.data.push(rec);
+          }
+        }
+      });
+    });
+  });
+  D = { generated: window.OCR_META.generated, modes: window.OCR_META.modes, dates: _dates, series: _series };
+  var _M = window.OCR_META, _alerts = [];
+  Object.keys(window.RP).sort().forEach(function(key){
+    window.RP[key].forEach(function(rec){
+      var mi = parseInt(rec[1], 10);
+      _alerts.push({ date: rec[0], mode: _M.modes[mi], role: _M.rid[mi][parseInt(rec[2], 10)][0], field: _M.f[rec[3]], prev: rec[4], cur: rec[5], delta: rec[6], rule: _M.k[rec[7]], severity: rec[8] });
+    });
+  });
+  R = { threshold: _M.threshold, rules: [], alerts: _alerts };
+} else {
+  D = window.OCR_DATA; R = window.RISK_DATA;
+}
+if (!D || !R) { document.querySelector('.main').innerHTML += '<div style="color:#f87171;font-size:13px;padding:20px;">数据文件加载失败：请将 index.html 与 data_index.js、data_*.js、risk_*.js、roles.js 放在同一目录。</div>'; return; }
+
+function fmt(v, d) { return v == null ? '-' : Number(v).toFixed(d == null ? 1 : d); }
+function esc(s) { return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+var MODE_LABEL = { '特别行动单人排位': '特别行动', '诸神排位': '诸神', '巅峰赛': '巅峰赛' };
+var COLORS = ['#60a5fa','#4ade80','#fbbf24','#f87171','#c084fc','#22d3ee','#f472b6','#a3e635','#fb923c','#34d399','#818cf8','#facc15','#2dd4bf','#e879f9','#94a3b8'];
+function modeName(m) { return MODE_LABEL[m] || m; }
+function rolesOf(mode) { return Object.keys(D.series[mode] || {}); }
+
+// ===== 侧边栏导航 =====
+var navBtns = document.querySelectorAll('.nav-btn');
+function showPanel(name) {
+  navBtns.forEach(function(b){ b.classList.toggle('active', b.dataset.panel === name); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('panel-' + name).classList.add('active');
+  var ms = document.getElementById('sidebar-modes');
+  ms.classList.toggle('open', name === 'base');
+  if (name === 'base') { if (lineChart) setTimeout(function(){ lineChart.resize(); }, 50); }
+  if (name === 'risk') renderRisk();
+  if (name === 'ai') { renderAI(); if (quadChart) setTimeout(function(){ quadChart.resize(); }, 50); }
+}
+navBtns.forEach(function(b){ b.addEventListener('click', function(){ showPanel(b.dataset.panel); }); });
+
+// ===== 侧边栏模式选择 =====
+function initSidebarModes() {
+  var h = '';
+  D.modes.forEach(function(m){
+    h += '<button class="mode-btn' + (m === BASE.mode ? ' active' : '') + '" data-side-mode="' + esc(m) + '">' + modeName(m) + '</button>';
+  });
+  document.getElementById('sidebar-modes').innerHTML = h;
+  document.querySelectorAll('.mode-btn').forEach(function(b){
+    b.addEventListener('click', function(){
+      BASE.mode = b.dataset.sideMode;
+      document.querySelectorAll('.mode-btn').forEach(function(x){ x.classList.toggle('active', x === b); });
+      BASE.roles = rolesOf(BASE.mode).slice(); // 切模式默认全选
+      rebuildCamps();
+      renderChips();
+      renderLine();
+      renderDailyTable();
+    });
+  });
+}
+
+// ===== 基础监控 =====
+// 默认显示该模式全部身份
+function defaultRoles(mode) { return rolesOf(mode).slice(); }
+var BASE = { mode: D.modes[0], metric: 'win', camp: 'all', roles: defaultRoles(D.modes[0]), ma: true };
+var lineChart = null;
+
+function setMetricBtn() {
+  document.querySelectorAll('#metric-btns .btn').forEach(function(b){ b.classList.toggle('active', b.dataset.metric === BASE.metric); });
+}
+
+function initMetricBtns() {
+  var h = '';
+  [['win','胜率'],['pick','选取率'],['str','强度']].forEach(function(p){
+    h += '<button class="btn' + (BASE.metric === p[0] ? ' active' : '') + '" data-metric="' + p[0] + '">' + p[1] + '</button>';
+  });
+  document.getElementById('metric-btns').innerHTML = h;
+  document.querySelectorAll('#metric-btns .btn').forEach(function(b){
+    b.addEventListener('click', function(){ BASE.metric = b.dataset.metric; setMetricBtn(); renderLine(); });
+  });
+}
+
+function rebuildCamps() {
+  var cm = document.getElementById('camp-sel');
+  var cur = BASE.camp;
+  cm.innerHTML = '<option value="all">全部阵营</option>';
+  var camps = {};
+  rolesOf(BASE.mode).forEach(function(r){ var c = D.series[BASE.mode][r].camp; if (c) camps[c] = 1; });
+  Object.keys(camps).forEach(function(c){ cm.insertAdjacentHTML('beforeend', '<option value="' + esc(c) + '">' + esc(c) + '</option>'); });
+  if (cur !== 'all' && camps[cur]) { cm.value = cur; BASE.camp = cur; } else { cm.value = 'all'; BASE.camp = 'all'; }
+  cm.onchange = function(){ BASE.camp = cm.value; renderChips(); renderLine(); };
+}
+
+function filteredRoles() {
+  return rolesOf(BASE.mode).filter(function(r){
+    return BASE.camp === 'all' || D.series[BASE.mode][r].camp === BASE.camp;
+  });
+}
+
+function renderChips() {
+  var box = document.getElementById('role-chips');
+  var h = '';
+  filteredRoles().forEach(function(r){
+    var sel = BASE.roles.indexOf(r) >= 0;
+    h += '<span class="role-chip' + (sel ? ' sel' : '') + '" data-r="' + esc(r) + '">' + esc(r) + '</span>';
+  });
+  box.innerHTML = h;
+  box.querySelectorAll('.role-chip').forEach(function(c){
+    c.addEventListener('click', function(){
+      var r = c.dataset.r, i = BASE.roles.indexOf(r);
+      if (i >= 0) BASE.roles.splice(i, 1); else BASE.roles.push(r);
+      renderChips(); renderLine();
+    });
+  });
+}
+
+function ma7(arr) {
+  var out = [];
+  for (var i = 0; i < arr.length; i++) {
+    var s = 0, n = 0;
+    for (var j = Math.max(0, i - 6); j <= i; j++) { if (arr[j] != null) { s += arr[j]; n++; } }
+    out.push(n ? s / n : null);
+  }
+  return out;
+}
+
+function renderLine() {
+  var el = document.getElementById('line-chart');
+  if (!lineChart) lineChart = echarts.init(el);
+  var mode = BASE.mode, s = D.series[mode];
+  var roleSet = BASE.roles.filter(function(r){ return s[r]; });
+  var dates = D.dates;
+  var series = [];
+  roleSet.forEach(function(r, idx){
+    var recs = s[r].data;
+    var byDate = {};
+    recs.forEach(function(x){ byDate[x.d] = x; });
+    var wVals = dates.map(function(d){ var x = byDate[d]; return x && x.w != null ? x.w : null; });
+    var pVals = dates.map(function(d){ var x = byDate[d]; return x && x.p != null ? x.p : null; });
+    var color = COLORS[idx % COLORS.length];
+    if (BASE.metric === 'str') {
+      // 强度 = 胜率% × √选取率% ÷ 10；平均选取率 < 2% 记为样本不足（灰显）
+      var strVals = dates.map(function(d){ var x = byDate[d]; return x && x.w != null && x.p != null ? x.w * Math.sqrt(x.p) / 10 : null; });
+      var pList = pVals.filter(function(v){ return v != null; });
+      var avgP = pList.length ? pList.reduce(function(a, b){ return a + b; }, 0) / pList.length : 0;
+      var lowSample = avgP > 0 && avgP < 2;
+      var sname = lowSample ? r + '·样本不足' : r;
+      series.push({
+        name: sname, type: 'line', data: strVals, showSymbol: false,
+        lineStyle: { width: 2, color: lowSample ? '#475569' : color, type: lowSample ? 'dotted' : 'solid', opacity: lowSample ? 0.7 : 1 }, itemStyle: { color: lowSample ? '#475569' : color },
+        emphasis: { focus: 'series', lineStyle: { width: 3 } }
+      });
+      if (BASE.ma) {
+        series.push({
+          name: sname + '·MA7', type: 'line', data: ma7(strVals), showSymbol: false,
+          lineStyle: { width: 1.5, color: lowSample ? '#475569' : color, type: 'dashed', opacity: 0.5 }, itemStyle: { color: lowSample ? '#475569' : color },
+          silent: true, emphasis: { focus: 'series' }
+        });
+      }
+    } else {
+      var field = BASE.metric === 'pick' ? 'p' : 'w';
+      var vals = field === 'p' ? pVals : wVals;
+      series.push({
+        name: r, type: 'line', data: vals, showSymbol: false,
+        lineStyle: { width: 2, color: color }, itemStyle: { color: color },
+        emphasis: { focus: 'series', lineStyle: { width: 3 } }
+      });
+      if (BASE.ma) {
+        series.push({
+          name: r + '·MA7', type: 'line', data: ma7(vals), showSymbol: false,
+          lineStyle: { width: 1.5, color: color, type: 'dashed', opacity: 0.7 }, itemStyle: { color: color },
+          silent: true, emphasis: { focus: 'series' }
+        });
+      }
+    }
+  });
+  var yAxis = [{ type: 'value', name: BASE.metric === 'win' ? '胜率 %' : (BASE.metric === 'pick' ? '选取率 %' : '强度分'), axisLabel: { color: '#9ca3af', fontSize: 11 }, splitLine: { lineStyle: { color: '#1e293b' } }, nameTextStyle: { color: '#6b7280' } }];
+  // 默认近 7 天
+  var zStart = dates.length > 7 ? Math.round((dates.length - 7) * 100 / dates.length) : 0;
+  // 悬停聚焦：记录当前 hover 的系列，tooltip 只显示该线（及它的 MA7）
+  var hoverSerie = null;
+  lineChart.off('mouseover');
+  lineChart.off('globalout');
+  lineChart.on('mouseover', function(p){ if (p.seriesName) hoverSerie = p.seriesName; });
+  lineChart.on('globalout', function(){ hoverSerie = null; });
+  lineChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis', confine: true, backgroundColor: 'rgba(17,24,39,.95)', borderColor: '#2d3748', textStyle: { color: '#e5e7eb', fontSize: 12 },
+      valueFormatter: function(v){ return v == null ? '-' : fmt(v); },
+      formatter: function(params) {
+        var isStr = BASE.metric === 'str';
+        var pct = isStr ? '' : '%';
+        if (hoverSerie) {
+          var real = hoverSerie.replace('·MA7', '').replace('·胜率', '').replace('·选取', '').replace('·样本不足', '');
+          var hit = params.filter(function(x){
+            var n = x.seriesName;
+            return n === real || n === real + '·MA7' || n === real + '·胜率' || n === real + '·选取' || n === real + '·胜率MA7' || n === real + '·选取MA7' || n === real + '·样本不足' || n === real + '·样本不足·MA7';
+          });
+          if (hit.length) {
+            var lines = [];
+            hit.forEach(function(x){
+              if (x.value == null) return;
+              var tag;
+              if (x.seriesName.indexOf('·样本不足') >= 0) tag = '强度';
+              else if (x.seriesName === real) tag = isStr ? '强度' : '胜率';
+              else tag = x.seriesName.replace(real + '·', '');
+              lines.push(x.marker + ' ' + tag + ': ' + fmt(x.value) + pct);
+            });
+            if (lines.length) return '<b>' + esc(real) + '</b><br>' + params[0].axisValueLabel + '<br>' + lines.join('<br>');
+          }
+        }
+        var out = [];
+        params.forEach(function(x){
+          if (x.value == null) return;
+          out.push(x.marker + ' ' + esc(x.seriesName) + ': ' + fmt(x.value) + pct);
+        });
+        return out.length ? '<b>' + modeName(mode) + '</b> ' + params[0].axisValueLabel + '<br>' + out.join('<br>') : '';
+      }
+    },
+    legend: { type: 'scroll', textStyle: { color: '#9ca3af', fontSize: 11 }, pageIconColor: '#60a5fa', pageTextStyle: { color: '#9ca3af' }, top: 0 },
+    grid: { left: 50, right: 16, top: 34, bottom: 56, containLabel: true },
+    xAxis: { type: 'category', data: dates.map(function(d){ return d.slice(5); }), axisLabel: { color: '#9ca3af', fontSize: 10.5 }, axisLine: { lineStyle: { color: '#2d3748' } } },
+    yAxis: yAxis,
+    dataZoom: [
+      { type: 'inside', start: zStart, end: 100 },
+      { type: 'slider', height: 18, bottom: 8, borderColor: '#2d3748', backgroundColor: '#151b2e', fillerColor: 'rgba(96,165,250,.2)', textStyle: { color: '#9ca3af', fontSize: 10 }, start: zStart, end: 100 }
+    ],
+    series: series
+  }, true);
+  document.getElementById('line-title').textContent = modeName(mode) + ' · ' + (BASE.metric === 'win' ? '胜率' : BASE.metric === 'pick' ? '选取率' : '强度') + ' 趋势' + (BASE.ma ? '（含MA7虚线）' : '');
+  var fn = document.getElementById('formula-note');
+  if (fn) fn.style.display = BASE.metric === 'str' ? 'inline' : 'none';
+  if (roleSet.length === 0) { document.getElementById('detail-card').style.display = 'none'; return; }
+  lineChart.off('legendselectchanged');
+  lineChart.on('legendselectchanged', function(p){
+    var name = p.name.replace('·MA7', '').replace('·胜率', '').replace('·选取', '').replace('·样本不足', '');
+    if (p.selected[p.name]) showDetail(mode, name);
+  });
+}
+
+function showDetail(mode, role) {
+  var recs = (D.series[mode][role] || {}).data || [];
+  if (!recs.length) return;
+  var last = recs[recs.length - 1];
+  var prev7 = recs.length > 7 ? recs[recs.length - 8] : recs[0];
+  var winList = recs.filter(function(x){ return x.w != null; }).map(function(x){ return x.w; });
+  var pickList = recs.filter(function(x){ return x.p != null; }).map(function(x){ return x.p; });
+  var wMax = Math.max.apply(null, winList), wMin = Math.min.apply(null, winList);
+  var pMax = Math.max.apply(null, pickList), pMin = Math.min.apply(null, pickList);
+  var dw = last.w != null && prev7.w != null ? last.w - prev7.w : null;
+  var dp = last.p != null && prev7.p != null ? last.p - prev7.p : null;
+  document.getElementById('detail-card').style.display = 'block';
+  document.getElementById('detail-name').textContent = role + '（' + modeName(mode) + '）';
+  var h = '';
+  h += '<div class="metric-card"><div class="l">最新胜率</div><div class="v">' + fmt(last.w) + '%</div></div>';
+  h += '<div class="metric-card"><div class="l">最新选取率</div><div class="v">' + fmt(last.p) + '%</div></div>';
+  h += '<div class="metric-card"><div class="l">7日胜率变化</div><div class="v ' + (dw == null ? '' : dw >= 0 ? 'up' : 'down') + '">' + (dw == null ? '-' : (dw > 0 ? '+' : '') + fmt(dw)) + 'pp</div></div>';
+  h += '<div class="metric-card"><div class="l">7日选取率变化</div><div class="v ' + (dp == null ? '' : dp >= 0 ? 'up' : 'down') + '">' + (dp == null ? '-' : (dp > 0 ? '+' : '') + fmt(dp)) + 'pp</div></div>';
+  h += '<div class="metric-card"><div class="l">胜率区间</div><div class="v" style="font-size:15px;">' + fmt(wMin) + ' ~ ' + fmt(wMax) + '</div></div>';
+  h += '<div class="metric-card"><div class="l">选取率区间</div><div class="v" style="font-size:15px;">' + fmt(pMin) + ' ~ ' + fmt(pMax) + '</div></div>';
+  var lastStr = last.w != null && last.p != null ? last.w * Math.sqrt(last.p) / 10 : null;
+  h += '<div class="metric-card"><div class="l">当前强度</div><div class="v">' + (lastStr == null ? '-' : fmt(lastStr)) + '</div></div>';
+  h += '<div class="metric-card"><div class="l">强度公式</div><div class="v" style="font-size:13px;line-height:1.5;">胜率% × √选取率% ÷ 10</div></div>';
+  document.getElementById('detail-metrics').innerHTML = h;
+}
+
+// ===== 每日数据明细（基础监控页下方，源数据表格式） =====
+var DAILY = { date: null, sort: 'camp', asc: false };
+var CAMP_COLOR = { '入侵者阵营': '#f87171', '宇航员阵营': '#60a5fa', '中立阵营': '#c084fc' };
+var CAMP_ORDER = ['宇航员阵营', '入侵者阵营', '中立阵营'];
+
+function initDaily() {
+  var sel = document.getElementById('daily-date');
+  if (!sel) return;
+  var ds = D.dates.slice().reverse();
+  ds.forEach(function(d){ sel.insertAdjacentHTML('beforeend', '<option value="' + d + '">' + d + '</option>'); });
+  DAILY.date = ds[0] || null;
+  sel.onchange = function(){ DAILY.date = this.value; renderDailyTable(); };
+  document.querySelectorAll('#daily-card th[data-sort]').forEach(function(th){
+    th.addEventListener('click', function(){
+      var f = th.dataset.sort;
+      if (f === 'camp') { DAILY.sort = 'camp'; DAILY.asc = false; }
+      else if (DAILY.sort === f) DAILY.asc = !DAILY.asc;
+      else { DAILY.sort = f; DAILY.asc = false; }
+      renderDailyTable();
+    });
+  });
+}
+
+function renderDailyTable() {
+  var mode = BASE.mode, s = D.series[mode] || {};
+  var date = DAILY.date;
+  var rows = [];
+  Object.keys(s).forEach(function(r){
+    var byD = {};
+    s[r].data.forEach(function(x){ byD[x.d] = x; });
+    var rec = byD[date];
+    if (!rec) return;
+    rows.push({ role: r, camp: s[r].camp, w: rec.w, p: rec.p, wy: rec.wy, py: rec.py });
+  });
+  var f = DAILY.sort;
+  if (f === 'camp') {
+    var co = {};
+    CAMP_ORDER.forEach(function(c, i){ co[c] = i; });
+    rows.sort(function(a, b){
+      var ca = co[a.camp] == null ? 99 : co[a.camp];
+      var cb = co[b.camp] == null ? 99 : co[b.camp];
+      if (ca !== cb) return ca - cb;
+      var va = a.w == null ? -1e9 : a.w, vb = b.w == null ? -1e9 : b.w;
+      return vb - va;
+    });
+  } else {
+    rows.sort(function(a, b){
+      if (f === 'role') { return DAILY.asc ? (a.role < b.role ? -1 : a.role > b.role ? 1 : 0) : (a.role > b.role ? -1 : a.role < b.role ? 1 : 0); }
+      var va = a[f] == null ? -1e9 : a[f], vb = b[f] == null ? -1e9 : b[f];
+      if (va === vb) return 0;
+      return DAILY.asc ? va - vb : vb - va;
+    });
+  }
+  var h = '';
+  var lastCamp = null;
+  rows.forEach(function(r){
+    var str = r.w != null && r.p != null ? r.w * Math.sqrt(r.p) / 10 : null;
+    var ccol = CAMP_COLOR[r.camp] || '#94a3b8';
+    if (f === 'camp' && r.camp !== lastCamp) {
+      lastCamp = r.camp;
+      h += '<tr class="camp-group-row"><td colspan="7"><span class="camp-dot" style="background:' + ccol + ';"></span>' + esc(r.camp || '未知阵营') + '</td></tr>';
+    }
+    h += '<tr class="role-tbl-row" data-role="' + esc(r.role) + '" data-mode="' + esc(mode) + '">' +
+      '<td><b>' + esc(r.role) + '</b></td>' +
+      '<td>' + (f === 'camp' ? '' : '<span class="camp-dot" style="background:' + ccol + ';"></span>') + esc(r.camp || '-') + '</td>' +
+      '<td>' + fmt(r.w) + '%</td>' +
+      '<td>' + fmt(r.p) + '%</td>' +
+      '<td class="' + (r.wy == null ? '' : r.wy >= 0 ? 'pos' : 'neg') + '">' + (r.wy == null ? '-' : (r.wy > 0 ? '+' : '') + fmt(r.wy)) + '</td>' +
+      '<td class="' + (r.py == null ? '' : r.py >= 0 ? 'pos' : 'neg') + '">' + (r.py == null ? '-' : (r.py > 0 ? '+' : '') + fmt(r.py)) + '</td>' +
+      '<td>' + (str == null ? '-' : fmt(str)) + '</td></tr>';
+  });
+  document.getElementById('daily-tbody').innerHTML = h;
+  document.getElementById('daily-empty').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('daily-mode-label').textContent = modeName(mode);
+  document.querySelectorAll('#daily-card th[data-sort]').forEach(function(th){
+    var on = th.dataset.sort === DAILY.sort || (DAILY.sort === 'camp' && th.dataset.sort === 'camp');
+    th.classList.toggle('sorted', on);
+    th.setAttribute('data-arrow', on ? (DAILY.sort === 'camp' ? ' ▤' : (DAILY.asc ? ' ▲' : ' ▼')) : '');
+  });
+  document.querySelectorAll('#daily-tbody .role-tbl-row').forEach(function(tr){
+    tr.addEventListener('click', function(){ jumpToBase(tr.dataset.mode, tr.dataset.role, 'win'); });
+  });
+}
+
+// ===== 风险监控 =====
+function sevLabel(s) { return s >= 3 ? '<span class="badge s3">高</span>' : s === 2 ? '<span class="badge s2">中</span>' : '<span class="badge s1">低</span>'; }
+function ruleLabel(r) { return r === 'single_day' ? '单日突变' : r === 'trend_3d' ? '连续3日' : '7日异常'; }
+
+function renderRisk() {
+  var thr = parseFloat(document.getElementById('risk-thr').value) || 5;
+  var mode = document.getElementById('risk-mode').value;
+  var sev = document.getElementById('risk-sev').value;
+  var q = document.getElementById('risk-q').value.trim();
+  var rSingle = document.getElementById('rule-single').classList.contains('active');
+  var rTrend = document.getElementById('rule-trend').classList.contains('active');
+  var rZ = document.getElementById('rule-z').classList.contains('active');
+  var rows = R.alerts.filter(function(a){
+    if (mode !== 'all' && a.mode !== mode) return false;
+    if (sev !== 'all' && String(a.severity) !== sev) return false;
+    if (q && a.role.indexOf(q) < 0) return false;
+    if (a.rule === 'single_day' && (!rSingle || Math.abs(a.delta) < thr)) return false;
+    if (a.rule === 'trend_3d' && (!rTrend || Math.abs(a.delta) < thr)) return false;
+    if (a.rule === 'zscore_7d' && !rZ) return false;
+    return true;
+  });
+  rows.sort(function(a, b){ return a.date < b.date ? 1 : a.date > b.date ? -1 : b.severity - a.severity; });
+  var shown = rows.slice(0, 300);
+  document.getElementById('risk-count').textContent = '匹配 ' + rows.length + ' 条，显示前 ' + shown.length + ' 条';
+  var tb = document.getElementById('risk-tbody');
+  var h = '';
+  shown.forEach(function(a){
+    h += '<tr class="alert-row" data-role="' + esc(a.role) + '" data-mode="' + esc(a.mode) + '" data-field="' + a.field + '">' +
+      '<td>' + a.date + '</td><td>' + modeName(a.mode) + '</td><td><b>' + esc(a.role) + '</b></td>' +
+      '<td>' + (a.field === 'win' ? '胜率' : '选取率') + '</td>' +
+      '<td>' + fmt(a.prev) + '</td><td>' + fmt(a.cur) + '</td>' +
+      '<td class="' + (a.delta >= 0 ? 'pos' : 'neg') + '">' + (a.delta > 0 ? '+' : '') + fmt(a.delta) + '</td>' +
+      '<td>' + ruleLabel(a.rule) + '</td><td>' + sevLabel(a.severity) + '</td></tr>';
+  });
+  tb.innerHTML = h;
+  document.getElementById('risk-empty').style.display = shown.length ? 'none' : 'block';
+  tb.querySelectorAll('.alert-row').forEach(function(tr){
+    tr.addEventListener('click', function(){ jumpToBase(tr.dataset.mode, tr.dataset.role, tr.dataset.field); });
+  });
+}
+
+function jumpToBase(mode, role, field) {
+  showPanel('base');
+  BASE.mode = mode; BASE.metric = field === 'pick' ? 'pick' : 'win';
+  BASE.roles = [role];
+  document.querySelectorAll('.mode-btn').forEach(function(x){ x.classList.toggle('active', x.dataset.sideMode === mode); });
+  rebuildCamps();
+  initSidebarModes();
+  initMetricBtns();
+  renderChips();
+  renderLine();
+  renderDailyTable();
+  if (lineChart) lineChart.dispatchAction({ type: 'legendSelect', name: role });
+  showDetail(mode, role);
+  document.getElementById('detail-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ===== AI 分析 =====
+var AI = { mode: D.modes[0], range: 'r7' };
+var quadChart = null;
+
+function initAIModeBtns() {
+  var h = '';
+  D.modes.forEach(function(m){ h += '<button class="btn' + (m === AI.mode ? ' active' : '') + '" data-ai-mode="' + esc(m) + '">' + modeName(m) + '</button>'; });
+  document.getElementById('ai-mode-btns').innerHTML = h;
+  document.querySelectorAll('#ai-mode-btns .btn').forEach(function(b){
+    b.addEventListener('click', function(){ AI.mode = b.dataset.aiMode; renderAI(); });
+  });
+}
+
+function dateRange() {
+  var all = D.dates;
+  var end = all[all.length - 1];
+  var n = AI.range === 'r7' ? 7 : AI.range === 'r30' ? 30 : all.length;
+  var custom = document.getElementById('ai-date').value;
+  if (custom) return { start: custom, end: custom, dates: [custom] };
+  var start = all[Math.max(0, all.length - n)];
+  var ds = all.filter(function(d){ return d >= start && d <= end; });
+  return { start: start, end: end, dates: ds };
+}
+
+function avgRec(mode, role, dates) {
+  var recs = (D.series[mode][role] || {}).data || [];
+  var byD = {};
+  recs.forEach(function(x){ byD[x.d] = x; });
+  var ws = [], ps = [], n = 0;
+  dates.forEach(function(d){ var x = byD[d]; if (x) { if (x.w != null) ws.push(x.w); if (x.p != null) ps.push(x.p); n++; } });
+  if (!ws.length && !ps.length) return null;
+  return { w: ws.length ? ws.reduce(function(a, b){ return a + b; }, 0) / ws.length : null,
+           p: ps.length ? ps.reduce(function(a, b){ return a + b; }, 0) / ps.length : null, n: n };
+}
+
+function renderAI() {
+  initAIModeBtns();
+  var mode = AI.mode;
+  var rng = dateRange();
+  var winThr = parseFloat(document.getElementById('ai-win-thr').value) || 55;
+  var pickThr = parseFloat(document.getElementById('ai-pick-thr').value) || 10;
+  var roles = Object.keys(D.series[mode]);
+  var pts = [];
+  roles.forEach(function(r){
+    var a = avgRec(mode, r, rng.dates);
+    if (a && (a.w != null || a.p != null)) pts.push({ role: r, w: a.w, p: a.p, n: a.n, camp: D.series[mode][r].camp });
+  });
+  var el = document.getElementById('quad-chart');
+  if (!quadChart) quadChart = echarts.init(el);
+  // 强力身份：胜率 > 阈值 且 选取率 > 阈值（固定百分比）
+  var strong = pts.filter(function(p){ return p.w != null && p.p != null && p.w > winThr && p.p > pickThr; }).sort(function(a, b){ return (b.w - b.p) - (a.w - a.p); });
+  var weak = pts.filter(function(p){ return p.w != null && p.w < 40 && p.p != null && p.p > 1; }).sort(function(a, b){ return a.w - b.w; });
+  var campColor = { '入侵者阵营': '#f87171', '宇航员阵营': '#60a5fa', '中立阵营': '#c084fc' };
+  // 按阵营分系列（legend 可开关）
+  var campNames = [];
+  pts.forEach(function(p){ var c = p.camp || '未知阵营'; if (campNames.indexOf(c) < 0) campNames.push(c); });
+  var series = campNames.map(function(camp){
+    var cdata = [];
+    pts.forEach(function(p, i){
+      if ((p.camp || '未知阵营') !== camp) return;
+      cdata.push({ value: [p.p == null ? 0 : p.p, p.w == null ? 0 : p.w], idx: i });
+    });
+    return {
+      name: camp, type: 'scatter',
+      data: cdata,
+      symbolSize: function(val, params){ var d = pts[params.data.idx]; return Math.max(10, Math.min(34, 6 + Math.sqrt(d.n) * 2.2)); },
+      itemStyle: { color: campColor[camp] || '#94a3b8', opacity: 0.75 },
+      label: { show: true, position: 'top', fontSize: 10, color: '#d1d5db', formatter: function(p){ return pts[p.data.idx].role; } },
+      labelLayout: { hideOverlap: true },
+      emphasis: { itemStyle: { opacity: 1 }, label: { show: true, fontWeight: 600 } }
+    };
+  });
+  // 阈值分割线（挂第一个系列）
+  if (series.length) {
+    series[0].markLine = {
+      silent: true, symbol: 'none',
+      lineStyle: { color: '#fbbf24', type: 'dashed', width: 1.5 },
+      data: [
+        { yAxis: winThr, label: { formatter: '胜率 ' + winThr + '%', color: '#fbbf24', fontSize: 11, position: 'insideEndTop' } },
+        { xAxis: pickThr, label: { formatter: '选取率 ' + pickThr + '%', color: '#fbbf24', fontSize: 11, position: 'insideEndTop' } }
+      ]
+    };
+  }
+  quadChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'item', confine: true, backgroundColor: 'rgba(17,24,39,.95)', borderColor: '#2d3748', textStyle: { color: '#e5e7eb', fontSize: 12 }, formatter: function(p){
+      var d = pts[p.data.idx];
+      return '<b>' + esc(d.role) + '</b><br>' + esc(d.camp || '') + '<br>胜率 ' + (d.w == null ? '-' : fmt(d.w) + '%') + '<br>选取率 ' + (d.p == null ? '-' : fmt(d.p) + '%') + '<br>样本天数 ' + d.n;
+    } },
+    legend: { data: campNames, textStyle: { color: '#9ca3af', fontSize: 11 }, top: 0 },
+    grid: { left: 50, right: 40, top: 34, bottom: 56 },
+    xAxis: { type: 'value', name: '选取率 %', min: 0, axisLabel: { color: '#9ca3af', fontSize: 11 }, nameTextStyle: { color: '#6b7280' }, splitLine: { lineStyle: { color: '#1e293b' } } },
+    yAxis: { type: 'value', name: '胜率 %', min: 0, max: 100, axisLabel: { color: '#9ca3af', fontSize: 11 }, nameTextStyle: { color: '#6b7280' }, splitLine: { lineStyle: { color: '#1e293b' } } },
+    dataZoom: [
+      { type: 'inside', xAxisIndex: 0 },
+      { type: 'inside', yAxisIndex: 0 },
+      { type: 'slider', xAxisIndex: 0, height: 16, bottom: 8, borderColor: '#2d3748', backgroundColor: '#151b2e', fillerColor: 'rgba(96,165,250,.2)', textStyle: { color: '#9ca3af', fontSize: 10 }, zoomLock: false },
+      { type: 'slider', yAxisIndex: 0, width: 16, right: 6, borderColor: '#2d3748', backgroundColor: '#151b2e', fillerColor: 'rgba(96,165,250,.2)', textStyle: { color: '#9ca3af', fontSize: 10 }, orient: 'vertical' }
+    ],
+    series: series
+  }, true);
+  var sh = '';
+  strong.slice(0, 20).forEach(function(p){ sh += '<span class="role-chip hot" title="胜率' + fmt(p.w) + '% 选取' + fmt(p.p) + '%">' + esc(p.role) + '</span>'; });
+  document.getElementById('quad-strong').innerHTML = sh || '<div class="empty-tip" style="padding:8px;">当前区间无强力身份</div>';
+  var wh = '';
+  weak.slice(0, 12).forEach(function(p){ wh += '<span class="role-chip weak" title="胜率' + fmt(p.w) + '% 选取' + fmt(p.p) + '%">' + esc(p.role) + '</span>'; });
+  document.getElementById('quad-weak').innerHTML = wh || '<div class="empty-tip" style="padding:8px;">无弱势身份</div>';
+  renderMove(mode, pts);
+}
+
+function renderMove(mode, pts) {
+  var allDates = D.dates;
+  var last7 = allDates.slice(Math.max(0, allDates.length - 7));
+  var tb = document.getElementById('quad-move').querySelector('tbody');
+  var rows = [];
+  pts.forEach(function(p){
+    var recent = avgRec(mode, p.role, last7);
+    if (!recent || recent.w == null || p.w == null) return;
+    var dw = recent.w - p.w, dp = (recent.p == null || p.p == null) ? 0 : recent.p - p.p;
+    if (Math.abs(dw) >= 2 || Math.abs(dp) >= 3) rows.push({ role: p.role, dw: dw, dp: dp });
+  });
+  rows.sort(function(a, b){ return Math.abs(b.dw) + Math.abs(b.dp) - (Math.abs(a.dw) + Math.abs(a.dp)); });
+  var h = '';
+  rows.slice(0, 10).forEach(function(r){
+    h += '<tr><td><b>' + esc(r.role) + '</b></td><td class="' + (r.dw >= 0 ? 'pos' : 'neg') + '">' + (r.dw > 0 ? '+' : '') + fmt(r.dw) + '</td><td class="' + (r.dp >= 0 ? 'pos' : 'neg') + '">' + (r.dp > 0 ? '+' : '') + fmt(r.dp) + '</td></tr>';
+  });
+  tb.innerHTML = h || '<tr><td colspan="3" style="color:#6b7280;">近7日无明显迁移</td></tr>';
+}
+
+// ===== 启动 =====
+initSidebarModes();
+initMetricBtns();
+rebuildCamps();
+initDaily();
+
+// 先绑定全部控件事件（独立于渲染，任何渲染失败不影响交互）
+document.getElementById('btn-all').onclick = function(){
+  BASE.roles = filteredRoles().slice();
+  renderChips(); renderLine();
+};
+document.getElementById('btn-none').onclick = function(){
+  BASE.roles = []; renderChips(); renderLine();
+};
+document.getElementById('btn-ma').onclick = function(){
+  BASE.ma = !BASE.ma; this.classList.toggle('active', BASE.ma); renderLine();
+};
+var chipsT = document.getElementById('btn-chips-toggle');
+if (chipsT) chipsT.onclick = function(){
+  var box = document.getElementById('role-chips');
+  var ex = box.classList.toggle('expanded');
+  chipsT.textContent = ex ? '收起 ▴' : '全部身份 ▾';
+  if (lineChart) setTimeout(function(){ lineChart.resize(); }, 50);
+};
+document.getElementById('risk-mode').innerHTML = '<option value="all">全部</option>' + D.modes.map(function(m){ return '<option value="' + esc(m) + '">' + modeName(m) + '</option>'; }).join('');
+document.getElementById('risk-mode').onchange = renderRisk;
+document.getElementById('risk-thr').onchange = renderRisk;
+document.getElementById('risk-sev').onchange = renderRisk;
+document.getElementById('risk-q').oninput = renderRisk;
+['rule-single', 'rule-trend', 'rule-z'].forEach(function(id){
+  document.getElementById(id).onclick = function(){ this.classList.toggle('active'); renderRisk(); };
+});
+['ai-r7', 'ai-r30', 'ai-all'].forEach(function(id){
+  document.getElementById(id).onclick = function(){
+    AI.range = id.slice(3);
+    document.querySelectorAll('#ai-r7,#ai-r30,#ai-all').forEach(function(x){ x.classList.remove('active'); });
+    this.classList.add('active'); renderAI();
+  };
+});
+document.getElementById('ai-date').onchange = renderAI;
+document.getElementById('ai-win-thr').onchange = renderAI;
+document.getElementById('ai-pick-thr').onchange = renderAI;
+
+// 再执行渲染，各面板独立 try/catch 隔离
+try { renderChips(); } catch (e) { console.error('renderChips 失败', e); }
+try { renderLine(); } catch (e) { console.error('renderLine 失败', e); }
+try { renderDailyTable(); } catch (e) { console.error('renderDailyTable 失败', e); }
+try { renderRisk(); } catch (e) { console.error('renderRisk 失败', e); }
+try { renderAI(); } catch (e) { console.error('renderAI 失败', e); }
+
+
+// ===== 图表全屏（放大/旋转） =====
+var fsChart = null, fsRot = false;
+function openFs(srcChart, title) {
+  var ov = document.getElementById('fs-overlay');
+  document.getElementById('fs-title').textContent = title;
+  var box = document.getElementById('fs-chart');
+  if (fsChart) { fsChart.dispose(); }
+  fsChart = echarts.init(box);
+  fsChart.setOption(srcChart.getOption(), true);
+  fsRot = false;
+  document.getElementById('fs-stage').classList.remove('rot');
+  document.getElementById('fs-rot-btn').textContent = '旋转 90°';
+  ov.classList.add('show');
+  setTimeout(function(){ fsChart.resize(); }, 80);
+}
+function closeFs() {
+  document.getElementById('fs-overlay').classList.remove('show');
+  document.getElementById('fs-stage').classList.remove('rot');
+  document.getElementById('fs-rot-btn').textContent = '旋转 90°';
+  if (fsChart) { fsChart.dispose(); fsChart = null; }
+}
+function toggleFsRot() {
+  fsRot = !fsRot;
+  document.getElementById('fs-stage').classList.toggle('rot', fsRot);
+  document.getElementById('fs-rot-btn').textContent = fsRot ? '复原' : '旋转 90°';
+  setTimeout(function(){ if (fsChart) fsChart.resize(); }, 300);
+}
+document.getElementById('fs-line-btn').onclick = function(){ if (lineChart) openFs(lineChart, '基础监控 · 折线图'); };
+document.getElementById('fs-quad-btn').onclick = function(){ if (quadChart) openFs(quadChart, 'AI 分析 · 四象限'); };
+document.getElementById('fs-rot-btn').onclick = toggleFsRot;
+document.getElementById('fs-close-btn').onclick = closeFs;
+document.getElementById('fs-overlay').addEventListener('click', function(e){ if (e.target.id === 'fs-overlay') closeFs(); });
+
+window.addEventListener('resize', function(){ if (lineChart) lineChart.resize(); if (quadChart) quadChart.resize(); });
+})();
+</script>
 </body>
 </html>
